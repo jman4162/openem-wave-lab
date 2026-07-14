@@ -21,6 +21,10 @@ Consequences (all signs below follow from this choice):
 | Complex permittivity      | `ε_c = ε + iσ/ω` (Im ε_c ≥ 0) | `ε − jσ/ω`                     |
 | Complex wavenumber        | `k = β + iα`, α ≥ 0 (decay)   | `k = β − jα`                   |
 | Outgoing cylindrical wave | `H₀⁽¹⁾(kρ)`                   | `H₀⁽²⁾(kρ)`                    |
+| Impedance phase (lossy)   | `arg η ∈ (−45°, 0)`           | `arg η ∈ (0°, 45°)`            |
+
+In both conventions H lags E in time for a lossy medium; the sign of `arg η`
+flips because the phasors are conjugates.
 
 **When transcribing a formula from a textbook, check its time convention first.**
 Most engineering references (Balanis, Pozar, Harrington) use `e^{+jωt}`; most
