@@ -8,3 +8,6 @@ export * from './plane-wave/derive';
 export * from './plane-wave/fields';
 export * from './plane-wave/polarization';
 export * from './plane-wave/model';
+export * from './spreading/state';
+export * from './spreading/fields';
+export * from './spreading/model';
