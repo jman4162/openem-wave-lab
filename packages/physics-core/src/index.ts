@@ -1,6 +1,7 @@
 export * from './constants';
 export * from './math/complex';
 export * from './math/vec3';
+export * from './math/bessel';
 export * from './model';
 export * from './plane-wave/state';
 export * from './plane-wave/derive';
