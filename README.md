@@ -9,11 +9,14 @@ professional computational electromagnetics software: every lesson is an analyti
 or reduced-order model whose parameters you can change and whose equations,
 field vectors, phase fronts, and power flow update together in real time.
 
+**[Try it live →](https://jman4162.github.io/openem-wave-lab/)**
+
 ## Status
 
-Early development. Current work: Phase 0 prototype — a plane-wave scene with
-E/H/k vector visualization, time scrubbing, a movable field probe, a polarization
-ellipse, a live equation panel, and shareable experiment URLs.
+Early development. The [live demo](https://jman4162.github.io/openem-wave-lab/)
+has the Phase 0 prototype: a plane-wave scene with E/H/k vector visualization,
+time scrubbing, a movable field probe, a polarization ellipse, a live equation
+panel, and shareable experiment URLs.
 
 Planned modules (see the roadmap in `docs/`): plane waves and polarization,
 spherical and cylindrical spreading, reflection and transmission at interfaces,
