@@ -1,4 +1,6 @@
 import { ParameterControls } from './components/ParameterControls';
+import { PolarizationEllipse } from './components/PolarizationEllipse';
+import { ProbeReadout } from './components/ProbeReadout';
 import { TimeControls } from './components/TimeControls';
 import { SceneView } from './render/SceneView';
 
@@ -21,6 +23,8 @@ export function App() {
           }}
         >
           <ParameterControls />
+          <ProbeReadout />
+          <PolarizationEllipse />
         </aside>
         <main style={{ flex: 1, minWidth: 0, background: '#111' }}>
           <SceneView />
