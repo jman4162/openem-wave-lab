@@ -2,72 +2,96 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository state
+## Project
 
-This is a greenfield project. No code exists yet. The only file is
-`background-info.local.md`, a draft product/technical spec for **OpenEM Wave Lab** —
-an open-source, browser-based interactive learning platform for electromagnetic-wave
-physics (plane/spherical/cylindrical waves, polarization, Fresnel interfaces,
-phase/group/energy velocity, negative refraction, whispering-gallery modes, standing
-waves). Read that spec before making design decisions; this file summarizes its
-binding choices. Update this file with real build/test commands once scaffolding exists.
+OpenEM Wave Lab: an open-source, browser-based interactive learning platform for
+electromagnetic-wave physics. Phase 0 (plane-wave scene) is implemented; the
+product spec's later phases add spherical/cylindrical waves, interfaces,
+dispersion, negative refraction, and whispering-gallery modes.
 
-## Planned stack and layout
+## Commands
 
-- TypeScript + React + Vite, static deployment (no backend), PWA support.
-- Rendering: Three.js `WebGPURenderer` with WebGL2 fallback. WebGPU-first, never WebGPU-only.
-- Computation paths, in order of preference: (1) TypeScript analytic models for
-  instant parameter updates, (2) Web Workers for root finding / eigenmode solving,
-  (3) WebGPU compute shaders for dense grids. Pyodide is optional tooling only —
-  never in the interaction loop. Meep runs offline to generate reference/validation
-  data; it must not become a browser dependency (GPL isolation).
-- Monorepo layout per spec §7.2: `apps/web/`, `packages/` (physics-core,
-  material-models, analytic-solutions, numerical-kernels, rendering, lesson-runtime,
-  lesson-schema, equation-renderer, accessibility, validation), `content/lessons/`,
-  `reference/`, `tools/`, `docs/`.
-- Licensing: Apache-2.0 for code, CC BY 4.0 for lesson content.
+pnpm 10 workspace (`npm i -g pnpm@10` if missing). Run from the repo root:
 
-## Architecture rules
+```sh
+pnpm install
+pnpm dev              # Vite dev server for apps/web (localhost:5173)
+pnpm test             # all vitest suites (root vitest.config.ts)
+pnpm test:watch
+pnpm typecheck        # per-package tsc --noEmit
+pnpm lint             # ESLint 9 flat config, type-aware
+pnpm format           # prettier --write
+pnpm build            # all packages
 
-- **Physics is independent of visualization.** Every experiment implements the
-  `PhysicsModel` contract (spec §7.3): declared `fidelity` level ("exact" |
-  "analytic" | "reduced-order" | "numerical" | "conceptual"), explicit `assumptions`,
-  `sampleField`, `observables`, `validate`. The renderer consumes samples and
-  observables generically — no lesson-specific formulas in rendering code, and the
-  rendering layer never modifies field behavior for visual effect.
-- **Lessons are data, not code.** Version-controlled YAML/JSON conforming to the
-  lesson schema (spec §7.4). Adding a lesson must not require touching the engine.
-- Every scene state must serialize to a shareable URL and JSON experiment file.
-- Analytic models before solvers: do not build an FDTD canvas first. The 2D FDTD
-  "numerical laboratory" is Phase 3 and stays separate from analytic lessons.
+# Single test file:
+pnpm vitest run packages/physics-core/test/plane-wave.test.ts
 
-## Physics-correctness rules (non-negotiable per spec)
+# Per-package:
+pnpm --filter @openem/physics-core test
+pnpm --filter web build
 
-- Phasor convention is `Re{Ẽ(r) e^{-iωt}}`, stated in every lesson and globally
-  consistent. Never silently mix `e^{-iωt}` and `e^{+jωt}` conventions.
-- Power-flow direction is computed from E×H, never assumed from k or inferred from
-  the sign of refractive index. Negative refraction must use a causal dispersive
-  model (Drude/Lorentz with loss), not an unrestricted "n = −1" material.
-- Cylindrical waves use the Hankel function `H₀⁽¹⁾(kρ)`, not cosine/√ρ; the 1/√ρ
-  form appears only as a labeled far-field asymptote.
-- Point-source expressions are never evaluated at r = 0 — use an excluded source
-  region or finite source.
-- Field, magnitude, phase, energy density, and instantaneous vs. time-averaged
-  Poynting vector are distinct displayed quantities; don't conflate them.
-- Every physics module ships with validation tests following the spec §8.1 hierarchy:
-  closed-form identities → limiting cases → conservation laws (e.g. R + T = 1,
-  Brewster zero, TIR unit reflectance) → boundary-condition residuals → independent
-  numerics → reference-solver data.
+# Build with the GitHub Pages base path (what deploy.yml does):
+VITE_BASE=/openem-wave-lab/ pnpm --filter web build
+```
 
-## MVP order
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, format:check, test, build.
+Pushes to main also deploy to https://jman4162.github.io/openem-wave-lab/ via
+`deploy.yml` (Pages artifact flow). `?gfx=webgl` on any app URL forces the
+WebGL2 backend for testing; the badge in the corner shows the active backend.
 
-Phase 0 prototype: one reusable plane-wave scene with E/H/k vectors, time scrubbing,
-polarization ellipse, movable probe, live equation panel, URL serialization, and
-WebGPU/WebGL2 detection. Phase 1 adds spherical/cylindrical spreading, a single
-planar interface, velocity comparisons, standing waves, and constrained
-negative-refraction and whispering-gallery lessons.
+## Architecture
 
-## Conventions
+Two workspace packages, deliberately lean (decision record and extraction
+triggers in `docs/architecture.md`):
 
-- `*.local.md` files are local working notes and should stay out of version control
-  once the repo is initialized.
+- `packages/physics-core` — pure TypeScript physics: complex/vec3 math,
+  constants, the `PhysicsModel` contract (`src/model.ts`), and the plane-wave
+  model (`src/plane-wave/`). No three.js/React/DOM dependency, ever.
+- `apps/web` — Vite + React 19 + three.js app. Rendering consumes models only
+  through `sampleField()`/`observables()`; no wave formula lives in the app.
+
+Key structural facts:
+
+- **three.js is pinned exactly** (`three@0.185.0`, no caret). The renderer is
+  `WebGPURenderer` from `three/webgpu` with automatic WebGL2 fallback;
+  `renderer.init()` is async. Upgrades are deliberate PRs with visual checks in
+  both backends. No TSL/node materials in Phase 0.
+- **Per-frame state never touches React.** The zustand store
+  (`apps/web/src/state/store.ts`) holds simulation time as `tau` (periods, not
+  seconds — phase survives frequency changes). `WaveScene.frame()` reads via
+  `getState()` and advances tau via `setState`; live UI elements (scrubber,
+  ellipse dot) follow via transient subscriptions or rAF loops writing to DOM
+  refs. Do not "simplify" this into React state or context.
+- **URL state** is flat versioned search params handled entirely in
+  `apps/web/src/state/urlCodec.ts` (pure, node-testable) + `urlSync.ts`
+  (browser wiring). `tau` is only serialized when paused. New keys must decode
+  with defaults so old links keep working.
+- Workspace packages export raw `.ts` source (no build step); typecheck is
+  per-package `tsc --noEmit`. Cross-package imports go through the package name
+  (an ESLint `no-restricted-imports` rule blocks relative escapes).
+
+## Physics rules (non-negotiable)
+
+`docs/physics-conventions.md` is the single source of truth. Summary:
+
+- Phasor convention `Re{Ẽ(r)e^{−iωt}}` everywhere ⇒ `ε_c = ε + iσ/ω`
+  (**plus** sign), `k = β + iα` with α ≥ 0, outgoing wave `e^{+ikz}`,
+  `arg η < 0` for lossy media. Formulas from `e^{+jωt}` textbooks (Balanis,
+  Pozar) must be conjugated. Convention-pin tests in
+  `packages/physics-core/test/plane-wave.test.ts` fail loudly on slips —
+  if one trips, the code is wrong, not the test.
+- Power flow is computed from `½Re{Ẽ×H̃*}` / `E×H`, never inferred from k or
+  the sign of a refractive index.
+- Instantaneous field, magnitude, phase, energy density, and instantaneous vs
+  time-averaged Poynting vector are distinct displayed quantities.
+- Every physics change requires a validation test (closed-form identity,
+  limiting case, or conservation law — hierarchy in `docs/architecture.md`).
+  Models also expose the same checks at runtime via `validate()`.
+- IEEE handedness for polarization; under this convention `(x̂ + iŷ)` is RHCP
+  for +z propagation.
+
+## Repository conventions
+
+- `*.local.md` files are untracked working notes (first line of `.gitignore`).
+- Commits are DCO signed (`git commit -s`).
+- Code is Apache-2.0; lesson/explanatory content is CC BY 4.0.
