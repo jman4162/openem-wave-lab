@@ -19,6 +19,10 @@ export default tseslint.config(
         'error',
         { patterns: [{ group: ['**/../packages/*', '**/../apps/*'] }] },
       ],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   {
