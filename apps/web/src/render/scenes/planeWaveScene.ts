@@ -16,8 +16,8 @@ import {
 } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { derivePlaneWave, planeWaveModel, ETA_0 } from '@openem/physics-core';
-import { useWaveLabStore } from '../state/store';
-import { ArrowField } from './arrowField';
+import { useWaveLabStore } from '../../state/store';
+import { ArrowField } from '../arrowField';
 
 const N = 48;
 /** Visual length of the propagation axis, scene units. */
@@ -41,7 +41,7 @@ export const COLORS = {
  * zustand's getState() each frame and writes tau back with setState - no React
  * involvement per frame (see docs/architecture.md).
  */
-export class WaveScene {
+export class PlaneWaveScene {
   readonly scene = new Scene();
   readonly camera = new PerspectiveCamera(50, 1, 0.01, 100);
   private controls: OrbitControls;
@@ -103,7 +103,7 @@ export class WaveScene {
       useWaveLabStore.setState({ tau: state.tau + dt * state.speed });
     }
 
-    const { params, tau, probeZeta } = useWaveLabStore.getState();
+    const { planeWave: params, tau, probeZeta } = useWaveLabStore.getState();
     const derived = derivePlaneWave(params);
     const zMax = DOMAIN_WAVELENGTHS * derived.wavelengthM;
     const sceneZPerMeter = L / zMax;

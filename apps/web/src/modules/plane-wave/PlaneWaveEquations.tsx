@@ -1,27 +1,10 @@
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
 import { derivePlaneWave, planeWaveModel, cabs, carg } from '@openem/physics-core';
-import { useWaveLabStore } from '../state/store';
+import { useWaveLabStore } from '../../state/store';
+import { Tex, texNum } from '../../components/Tex';
+import { ValidationList } from '../../components/ValidationList';
 
-/** LaTeX scientific notation, e.g. 2.99e8 -> "3.00\times10^{8}". */
-function texNum(value: number, digits = 3): string {
-  if (value === 0) return '0';
-  const exp = Math.floor(Math.log10(Math.abs(value)));
-  if (exp >= -2 && exp <= 3) return value.toPrecision(digits);
-  const mantissa = value / 10 ** exp;
-  return `${mantissa.toPrecision(digits)}\\times10^{${exp}}`;
-}
-
-const Tex = ({ children, block = false }: { children: string; block?: boolean }) => (
-  <span
-    dangerouslySetInnerHTML={{
-      __html: katex.renderToString(children, { displayMode: block, throwOnError: false }),
-    }}
-  />
-);
-
-export function EquationPanel() {
-  const params = useWaveLabStore((s) => s.params);
+export function PlaneWaveEquations() {
+  const params = useWaveLabStore((s) => s.planeWave);
   const derived = derivePlaneWave(params);
   const etaDeg = ((carg(derived.eta) * 180) / Math.PI).toFixed(1);
   const validation = planeWaveModel.validate(params);
@@ -55,23 +38,7 @@ export function EquationPanel() {
       {derived.skinDepthM !== null && (
         <Tex block>{`\\delta_s=1/\\alpha=${texNum(derived.skinDepthM)}\\ \\mathrm{m}`}</Tex>
       )}
-
-      <h4 style={{ margin: '6px 0 2px', fontSize: 12 }}>Assumptions</h4>
-      <ul style={{ margin: 0, paddingLeft: 18, color: '#555' }}>
-        {planeWaveModel.assumptions.map((a) => (
-          <li key={a}>{a}</li>
-        ))}
-      </ul>
-
-      <h4 style={{ margin: '6px 0 2px', fontSize: 12 }}>Validation (live)</h4>
-      <ul style={{ margin: 0, paddingLeft: 4, listStyle: 'none' }}>
-        {validation.map((v) => (
-          <li key={v.id} title={`residual ${v.residual.toExponential(2)}`}>
-            <span style={{ color: v.pass ? '#16a34a' : '#dc2626' }}>{v.pass ? '●' : '✖'}</span>{' '}
-            {v.description}
-          </li>
-        ))}
-      </ul>
+      <ValidationList assumptions={planeWaveModel.assumptions} results={validation} />
     </section>
   );
 }

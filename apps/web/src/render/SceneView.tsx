@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import type { WaveModule } from '../modules/types';
 import { createRenderer, type Backend } from './createRenderer';
-import { WaveScene } from './waveScene';
 
-export function SceneView() {
+/**
+ * Owns the canvas, renderer, and frame loop for one module's scene.
+ * Mount with key={module.id} so switching modules remounts cleanly.
+ */
+export function SceneView({ module }: { module: WaveModule }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [backend, setBackend] = useState<Backend | null>(null);
 
@@ -19,13 +23,13 @@ export function SceneView() {
       }
       setBackend(backend);
 
-      const waveScene = new WaveScene(renderer, canvas);
+      const controller = module.createScene(renderer, canvas);
 
       const resize = () => {
         const parent = canvas.parentElement;
         if (!parent) return;
         renderer.setSize(parent.clientWidth, parent.clientHeight, false);
-        waveScene.resize(parent.clientWidth, parent.clientHeight);
+        controller.resize(parent.clientWidth, parent.clientHeight);
       };
       resize();
       const observer = new ResizeObserver(resize);
@@ -36,14 +40,14 @@ export function SceneView() {
         const now = performance.now();
         const dt = Math.min((now - last) / 1000, 0.1);
         last = now;
-        waveScene.frame(dt);
-        renderer.render(waveScene.scene, waveScene.camera);
+        controller.frame(dt);
+        renderer.render(controller.scene, controller.camera);
       });
 
       cleanup = () => {
         observer.disconnect();
         void renderer.setAnimationLoop(null);
-        waveScene.dispose();
+        controller.dispose();
         renderer.dispose();
       };
     });
@@ -52,7 +56,7 @@ export function SceneView() {
       disposed = true;
       cleanup?.();
     };
-  }, []);
+  }, [module]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>

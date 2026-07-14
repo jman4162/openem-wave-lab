@@ -1,5 +1,16 @@
-import { useWaveLabStore } from './store';
-import { decodeScene, encodeScene } from './urlCodec';
+import { useWaveLabStore, type WaveLabState } from './store';
+import { decodeScene, encodeScene, type SceneSnapshot } from './urlCodec';
+
+export const snapshotOf = (s: WaveLabState): SceneSnapshot => ({
+  scene: s.scene,
+  planeWave: s.planeWave,
+  spreading: s.spreading,
+  tau: s.tau,
+  playing: s.playing,
+  speed: s.speed,
+  probeZeta: s.probeZeta,
+  probeRho: s.probeRho,
+});
 
 /**
  * Load scene state from the current URL, then mirror store changes back into
@@ -12,13 +23,7 @@ export function initUrlSync(): void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastQuery = '';
   useWaveLabStore.subscribe((s) => {
-    const query = encodeScene({
-      params: s.params,
-      tau: s.tau,
-      playing: s.playing,
-      speed: s.speed,
-      probeZeta: s.probeZeta,
-    }).toString();
+    const query = encodeScene(snapshotOf(s)).toString();
     if (query === lastQuery) return;
     lastQuery = query;
     clearTimeout(timer);

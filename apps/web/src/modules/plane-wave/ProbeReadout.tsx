@@ -10,8 +10,8 @@ import {
   type FieldsAtPoint,
   type PlaneWaveDerived,
 } from '@openem/physics-core';
-import { useWaveLabStore } from '../state/store';
-import { formatComplex, formatSI } from '../format';
+import { useWaveLabStore } from '../../state/store';
+import { formatComplex, formatSI } from '../../format';
 
 interface Readout {
   fields: FieldsAtPoint;
@@ -20,7 +20,7 @@ interface Readout {
 }
 
 function computeReadout(): Readout {
-  const { params, tau, probeZeta } = useWaveLabStore.getState();
+  const { planeWave: params, tau, probeZeta } = useWaveLabStore.getState();
   const derived = derivePlaneWave(params);
   const probeZ = probeZeta * derived.wavelengthM;
   const fields = fieldsAt(params, derived, probeZ, tau * derived.periodS);
@@ -49,7 +49,7 @@ export function ProbeReadout() {
   }, []);
 
   const { fields, derived, probeZ } = readout;
-  const { params } = useWaveLabStore.getState();
+  const { planeWave: params } = useWaveLabStore.getState();
   const Sinst = cross(fields.E, fields.H);
   const Savg = timeAveragedPoynting(fields.Ephasor, fields.Hphasor);
   const uE = 0.25 * EPSILON_0 * params.epsilonR * cnormSq(fields.Ephasor);

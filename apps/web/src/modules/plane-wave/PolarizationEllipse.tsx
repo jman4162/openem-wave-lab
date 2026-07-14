@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { derivePlaneWave, fieldsAt } from '@openem/physics-core';
-import { useWaveLabStore } from '../state/store';
+import { useWaveLabStore } from '../../state/store';
 
 const SIZE = 220;
 const HALF = SIZE / 2;
@@ -14,7 +14,7 @@ const toSvg = (ex: number, ey: number, scale: number): [number, number] => [
 ];
 
 export function PolarizationEllipse() {
-  const params = useWaveLabStore((s) => s.params);
+  const params = useWaveLabStore((s) => s.planeWave);
   const probeZeta = useWaveLabStore((s) => s.probeZeta);
   const dotRef = useRef<SVGCircleElement>(null);
 
@@ -37,10 +37,10 @@ export function PolarizationEllipse() {
     let raf = 0;
     const tick = () => {
       const s = useWaveLabStore.getState();
-      const d = derivePlaneWave(s.params);
+      const d = derivePlaneWave(s.planeWave);
       const z = s.probeZeta * d.wavelengthM;
-      const f = fieldsAt(s.params, d, z, s.tau * d.periodS);
-      const a0 = Math.hypot(s.params.E0x, s.params.E0y);
+      const f = fieldsAt(s.planeWave, d, z, s.tau * d.periodS);
+      const a0 = Math.hypot(s.planeWave.E0x, s.planeWave.E0y);
       const [x, y] = toSvg(f.E.x, f.E.y, a0 > 0 ? R / a0 : 0);
       dotRef.current?.setAttribute('cx', x.toFixed(1));
       dotRef.current?.setAttribute('cy', y.toFixed(1));

@@ -1,12 +1,14 @@
 import { CopyLinkButton } from './components/CopyLinkButton';
-import { EquationPanel } from './components/EquationPanel';
-import { ParameterControls } from './components/ParameterControls';
-import { PolarizationEllipse } from './components/PolarizationEllipse';
-import { ProbeReadout } from './components/ProbeReadout';
+import { ModuleNav } from './components/ModuleNav';
 import { TimeControls } from './components/TimeControls';
+import { getModule } from './modules/registry';
 import { SceneView } from './render/SceneView';
+import { useWaveLabStore } from './state/store';
 
 export function App() {
+  const scene = useWaveLabStore((s) => s.scene);
+  const module = getModule(scene);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <header
@@ -19,9 +21,8 @@ export function App() {
         }}
       >
         <strong>OpenEM Wave Lab</strong>
-        <span style={{ color: '#666', fontSize: 13, flex: 1 }}>
-          Plane wave — E (red), η₀H (blue), k (amber)
-        </span>
+        <ModuleNav />
+        <span style={{ color: '#666', fontSize: 13, flex: 1 }}>{module.legend}</span>
         <CopyLinkButton />
       </header>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
@@ -33,12 +34,11 @@ export function App() {
             overflowY: 'auto',
           }}
         >
-          <ParameterControls />
-          <ProbeReadout />
-          <PolarizationEllipse />
+          <module.Controls />
+          <module.Sidebar />
         </aside>
         <main style={{ flex: 1, minWidth: 0, background: '#111' }}>
-          <SceneView />
+          <SceneView key={module.id} module={module} />
         </main>
         <aside
           style={{
@@ -48,7 +48,7 @@ export function App() {
             overflowY: 'auto',
           }}
         >
-          <EquationPanel />
+          <module.Equations />
         </aside>
       </div>
       <TimeControls />

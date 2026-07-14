@@ -1,12 +1,11 @@
-import { planeWaveModel, type PlaneWaveState } from '@openem/physics-core';
-import { useWaveLabStore } from '../state/store';
+import type { ParameterDefinition } from '@openem/physics-core';
 
-const PRESETS: { label: string; values: Partial<PlaneWaveState> }[] = [
-  { label: 'Linear x', values: { E0x: 1, E0y: 0, phaseYDeg: 0 } },
-  { label: 'Linear 45°', values: { E0x: 1, E0y: 1, phaseYDeg: 0 } },
-  { label: 'RHCP', values: { E0x: 1, E0y: 1, phaseYDeg: 90 } },
-  { label: 'LHCP', values: { E0x: 1, E0y: 1, phaseYDeg: -90 } },
-];
+export interface ParameterControlsProps {
+  parameters: ParameterDefinition[];
+  values: Record<string, number>;
+  onChange: (key: string, value: number) => void;
+  presets?: { label: string; values: Record<string, number> }[];
+}
 
 function formatValue(value: number, unit: string): string {
   if (unit === 'Hz') {
@@ -18,29 +17,31 @@ function formatValue(value: number, unit: string): string {
   return unit ? `${text} ${unit}` : text;
 }
 
-export function ParameterControls() {
-  const params = useWaveLabStore((s) => s.params);
-  const setParam = useWaveLabStore((s) => s.setParam);
-
+/** Model-generic slider panel driven by ParameterDefinition metadata. */
+export function ParameterControls({
+  parameters,
+  values,
+  onChange,
+  presets,
+}: ParameterControlsProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {PRESETS.map((p) => (
-          <button
-            key={p.label}
-            onClick={() => {
-              for (const [k, v] of Object.entries(p.values)) {
-                setParam(k as keyof PlaneWaveState, v);
-              }
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      {planeWaveModel.parameters.map((def) => {
-        const key = def.key as keyof PlaneWaveState;
-        const value = params[key];
+      {presets && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {presets.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => {
+                for (const [k, v] of Object.entries(p.values)) onChange(k, v);
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {parameters.map((def) => {
+        const value = values[def.key] ?? def.default;
         const isLog = def.scale === 'log';
         const sliderValue = isLog ? Math.log10(value) : value;
         const sliderMin = isLog ? Math.log10(def.min) : def.min;
@@ -59,7 +60,7 @@ export function ParameterControls() {
               value={sliderValue}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value);
-                setParam(key, isLog ? 10 ** raw : raw);
+                onChange(def.key, isLog ? 10 ** raw : raw);
               }}
             />
           </label>
