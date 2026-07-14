@@ -15,12 +15,12 @@ E(r, t) = Re{ Ẽ(r) e^{−iωt} }
 
 Consequences (all signs below follow from this choice):
 
-| Quantity | This project (`e^{−iωt}`) | Engineering texts (`e^{+jωt}`) |
-|---|---|---|
-| Outgoing wave along +z | `Ẽ(z) = E₀ e^{+ikz}` | `E₀ e^{−jkz}` |
-| Complex permittivity | `ε_c = ε + iσ/ω` (Im ε_c ≥ 0) | `ε − jσ/ω` |
-| Complex wavenumber | `k = β + iα`, α ≥ 0 (decay) | `k = β − jα` |
-| Outgoing cylindrical wave | `H₀⁽¹⁾(kρ)` | `H₀⁽²⁾(kρ)` |
+| Quantity                  | This project (`e^{−iωt}`)     | Engineering texts (`e^{+jωt}`) |
+| ------------------------- | ----------------------------- | ------------------------------ |
+| Outgoing wave along +z    | `Ẽ(z) = E₀ e^{+ikz}`          | `E₀ e^{−jkz}`                  |
+| Complex permittivity      | `ε_c = ε + iσ/ω` (Im ε_c ≥ 0) | `ε − jσ/ω`                     |
+| Complex wavenumber        | `k = β + iα`, α ≥ 0 (decay)   | `k = β − jα`                   |
+| Outgoing cylindrical wave | `H₀⁽¹⁾(kρ)`                   | `H₀⁽²⁾(kρ)`                    |
 
 **When transcribing a formula from a textbook, check its time convention first.**
 Most engineering references (Balanis, Pozar, Harrington) use `e^{+jωt}`; most

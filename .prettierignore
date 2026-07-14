@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+dist/
+coverage/
+LICENSE
+CODE_OF_CONDUCT.md
+*.local.md

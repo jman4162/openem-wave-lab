@@ -9,7 +9,7 @@ data. The web app consumes models only through the `PhysicsModel` contract:
 ```ts
 interface PhysicsModel<State, Sample> {
   id: string;
-  fidelity: "exact" | "analytic" | "reduced-order" | "numerical" | "conceptual";
+  fidelity: 'exact' | 'analytic' | 'reduced-order' | 'numerical' | 'conceptual';
   assumptions: string[];
   parameters: ParameterDefinition[];
   derive(state: State): DerivedQuantities;
