@@ -1,10 +1,14 @@
-import { ETA_0 } from '@openem/physics-core';
+import { SceneView } from './render/SceneView';
 
 export function App() {
   return (
-    <main>
-      <h1>OpenEM Wave Lab</h1>
-      <p>Workspace stub. Free-space impedance from physics-core: η₀ = {ETA_0.toFixed(3)} Ω</p>
-    </main>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <header style={{ padding: '8px 16px', borderBottom: '1px solid #ddd' }}>
+        <strong>OpenEM Wave Lab</strong>
+      </header>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <SceneView />
+      </div>
+    </div>
   );
 }
