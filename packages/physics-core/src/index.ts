@@ -20,3 +20,6 @@ export * from './velocity/state';
 export * from './velocity/derive';
 export * from './velocity/fields';
 export * from './velocity/model';
+export * from './standing-wave/state';
+export * from './standing-wave/fields';
+export * from './standing-wave/model';
