@@ -11,36 +11,18 @@ import {
   type Vec3,
 } from '../math/vec3';
 import type { Observable, PhysicsModel, ValidationResult } from '../model';
+import { allocFieldSample, writeFieldSample, type FieldSample } from '../sample';
 import { derivePlaneWave, type PlaneWaveDerived } from './derive';
 import { fieldsAt } from './fields';
 import { defaultPlaneWaveState, planeWaveParameters, type PlaneWaveState } from './state';
 
-export interface PlaneWaveSample {
-  count: number;
-  /** Instantaneous E, xyz-interleaved (3N), V/m. */
-  E: Float32Array;
-  /** Instantaneous H, xyz-interleaved (3N), A/m. */
-  H: Float32Array;
-  /** Phasor E~, re/im interleaved per component (6N). */
-  Ephasor: Float32Array;
-  /** Phasor H~, re/im interleaved per component (6N). */
-  Hphasor: Float32Array;
-}
+export type PlaneWaveSample = FieldSample;
 
 /** Time-averaged Poynting vector <S> = (1/2) Re{E~ x H~*}, W/m^2. */
 export function timeAveragedPoynting(Ephasor: ComplexVec3, Hphasor: ComplexVec3): Vec3 {
   const s = ccross(Ephasor, cconjVec(Hphasor));
   return { x: 0.5 * s.x.re, y: 0.5 * s.y.re, z: 0.5 * s.z.re };
 }
-
-const writeComplexVec = (out: Float32Array, i: number, v: ComplexVec3): void => {
-  out[6 * i] = v.x.re;
-  out[6 * i + 1] = v.x.im;
-  out[6 * i + 2] = v.y.re;
-  out[6 * i + 3] = v.y.im;
-  out[6 * i + 4] = v.z.re;
-  out[6 * i + 5] = v.z.im;
-};
 
 export const planeWaveModel: PhysicsModel<PlaneWaveState, PlaneWaveSample, PlaneWaveDerived> = {
   id: 'plane-wave',
@@ -58,24 +40,10 @@ export const planeWaveModel: PhysicsModel<PlaneWaveState, PlaneWaveSample, Plane
   sampleField(state, points, time) {
     const derived = derivePlaneWave(state);
     const count = Math.floor(points.length / 3);
-    const sample: PlaneWaveSample = {
-      count,
-      E: new Float32Array(3 * count),
-      H: new Float32Array(3 * count),
-      Ephasor: new Float32Array(6 * count),
-      Hphasor: new Float32Array(6 * count),
-    };
+    const sample = allocFieldSample(count);
     for (let i = 0; i < count; i++) {
       const z = points[3 * i + 2] ?? 0;
-      const f = fieldsAt(state, derived, z, time);
-      sample.E[3 * i] = f.E.x;
-      sample.E[3 * i + 1] = f.E.y;
-      sample.E[3 * i + 2] = f.E.z;
-      sample.H[3 * i] = f.H.x;
-      sample.H[3 * i + 1] = f.H.y;
-      sample.H[3 * i + 2] = f.H.z;
-      writeComplexVec(sample.Ephasor, i, f.Ephasor);
-      writeComplexVec(sample.Hphasor, i, f.Hphasor);
+      writeFieldSample(sample, i, fieldsAt(state, derived, z, time));
     }
     return sample;
   },
