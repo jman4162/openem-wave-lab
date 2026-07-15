@@ -5,10 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 OpenEM Wave Lab: an open-source, browser-based interactive learning platform for
-electromagnetic-wave physics. Implemented modules: plane wave (3D vector scene),
-wave spreading (plane/cylindrical/spherical heatmap comparison), and planar
-interface (Fresnel/Brewster/TIR/PEC). Later phases add velocities, standing
-waves, dispersion, negative refraction, and whispering-gallery modes.
+electromagnetic-wave physics, desktop and mobile. Implemented modules: plane
+wave (3D vector scene), wave spreading (heatmap comparison + 3D surface),
+planar interface (Fresnel/Brewster/TIR/PEC, 2D + 3D views), velocities
+(phase/group/energy with waveguide dispersion), and standing waves. Later
+phases add negative refraction and whispering-gallery modes.
+
+Useful URL flags: `?gfx=webgl` forces the WebGL2 backend; `?perf=1` overlays
+frame-time stats; `?scene=<id>` deep-links a module.
 
 ## Commands
 

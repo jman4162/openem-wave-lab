@@ -84,6 +84,30 @@ grids exceed ~512² (the Phase 3 FDTD laboratory); adopting it earlier would
 churn the pinned three.js surface and move physics-adjacent code where
 physics-core tests can't see it.
 
+`HeightFieldLayer` is the 3D sibling: the same cached phasor grid displaces
+`PlaneGeometry` vertices (`z = re·cos ωt + im·sin ωt` per vertex) with vertex
+colors from the same LUTs — unlit `MeshBasicMaterial({vertexColors})`, no
+per-frame normals (they cost more than the displacement) and no lighting to
+verify across two backends. Height and color redundantly encode the field, so
+sign is readable without color. `WaveCurve` is the 1D analog (dynamic Line
+plus marker spheres) used by the velocity and standing-wave scenes.
+
+## Responsive shell and quality tiers
+
+Below 900px the App renders a different DOM (canvas-on-top + tabbed panel
+mounting only the active tab) selected by a `useMediaQuery` hook; desktop
+keeps the three-column grid. Layout/touch/a11y styling lives in
+`apps/web/src/app.css` — no UI framework. `SceneView` sets
+`setPixelRatio(min(devicePixelRatio, 2))`, and scenes choose grid resolutions
+once at construction from `render/quality.ts` (`smallViewport()`); a rotation
+mid-session keeps the tier until the next module switch — accepted. `?perf=1`
+overlays rolling frame stats for on-device measurement.
+`prefers-reduced-motion` loads the app paused unless the link carries an
+explicit play state. Deferred accessibility work (screen-reader scene
+descriptions, tabular plot alternatives, palette options) is tracked in the
+spec §9.2 list; the default diverging colormap is Moreland cool-warm, which is
+already colorblind-reasonable.
+
 ## TypeScript strategy
 
 Workspace packages export raw `.ts` source (`"exports": { ".": "./src/index.ts" }`).

@@ -14,20 +14,28 @@ field vectors, phase fronts, and power flow update together in real time.
 ## Status
 
 Early development. The [live demo](https://jman4162.github.io/openem-wave-lab/)
-has three modules, all with time scrubbing, movable probes, live equation
-panels with runtime validation, and shareable experiment URLs:
+works on desktop and mobile and has five modules, all with time scrubbing,
+movable probes, live equation panels with runtime validation, and shareable
+experiment URLs:
 
 - **Plane wave** — 3D E/H/k vector scene with polarization ellipse (linear,
   circular, elliptical; IEEE handedness) and lossy-media decay.
 - **Wave spreading** — side-by-side plane / cylindrical H₀⁽¹⁾ / spherical
-  field heatmaps with amplitude-vs-radius plots (r⁰, 1/√ρ, 1/r).
+  field heatmaps, an orbitable 3D surface view, and amplitude-vs-radius plots
+  (r⁰, 1/√ρ, 1/r).
 - **Planar interface** — TE/TM Fresnel with Brewster angle, total internal
   reflection with evanescent fields, lossy media, and PEC mirrors; Poynting
-  arrows computed from E×H.
+  arrows computed from E×H; 3D surface view where the seam across the
+  boundary is the tangential continuity condition, visible.
+- **Velocities** — phase vs group vs energy velocity in a waveguide-dispersion
+  medium: a marker riding a carrier crest races one riding the envelope peak,
+  plus a spreading Gaussian pulse and the ω(k) diagram with chord and tangent.
+- **Standing waves** — forward wave + complex Γ with short/open/matched
+  presets, SWR and node structure, and the probe that shows why instantaneous
+  zero crossings are not nodes.
 
-Planned modules (see the roadmap in `docs/`): phase/group/energy velocity,
-standing waves, negative refraction with causal dispersive materials, and
-whispering-gallery modes.
+Planned modules (see the roadmap in `docs/`): negative refraction with causal
+dispersive materials and whispering-gallery modes.
 
 ## Principles
 
