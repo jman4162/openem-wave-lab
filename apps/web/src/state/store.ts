@@ -3,14 +3,17 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultStandingWaveState,
   defaultVelocityState,
   type PlanarInterfaceState,
+  type StandingWaveState,
   type PlaneWaveState,
   type SpreadingState,
   type VelocityState,
 } from '@openem/physics-core';
 
-export type SceneId = 'plane-wave' | 'spreading' | 'planar-interface' | 'velocities';
+export type SceneId =
+  'plane-wave' | 'spreading' | 'planar-interface' | 'velocities' | 'standing-waves';
 
 export type SpreadingViewKind = 'plane' | 'cylindrical' | 'spherical';
 
@@ -27,6 +30,7 @@ export interface WaveLabState {
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
   velocity: VelocityState;
+  standingWave: StandingWaveState;
   /** Simulation time in periods (tau = t/T); phase survives frequency changes. */
   tau: number;
   playing: boolean;
@@ -39,6 +43,8 @@ export interface WaveLabState {
   /** Interface-module probe, in medium-1 wavelengths (z < 0 is medium 1). */
   probeX: number;
   probeZ: number;
+  /** Standing-wave probe position, in wavelengths (-4..0, wall at 0). */
+  probeZSw: number;
   /** Wave kind shown in the spreading module's single view. */
   spreadingKind: SpreadingViewKind;
   /** Side-by-side plane/cylindrical/spherical comparison. */
@@ -75,6 +81,8 @@ export interface WaveLabState {
   setInterfaceView3d: (view3d: boolean) => void;
   setVelocityParam: (key: keyof VelocityState, value: number) => void;
   setVelocityView: (view: VelocityView) => void;
+  setStandingWaveParam: (key: keyof StandingWaveState, value: number) => void;
+  setProbeZSw: (z: number) => void;
 }
 
 export const useWaveLabStore = create<WaveLabState>((set) => ({
@@ -83,6 +91,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
   velocity: defaultVelocityState,
+  standingWave: defaultStandingWaveState,
   tau: 0,
   playing: true,
   speed: 0.25,
@@ -90,6 +99,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   probeRho: 1,
   probeX: 0,
   probeZ: -0.5,
+  probeZSw: -0.625,
   spreadingKind: 'cylindrical',
   spreadingCompare: true,
   spreadingEnvelope: false,
@@ -128,4 +138,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   setInterfaceView3d: (interfaceView3d) => set({ interfaceView3d }),
   setVelocityParam: (key, value) => set((s) => ({ velocity: { ...s.velocity, [key]: value } })),
   setVelocityView: (velocityView) => set({ velocityView }),
+  setStandingWaveParam: (key, value) =>
+    set((s) => ({ standingWave: { ...s.standingWave, [key]: value } })),
+  setProbeZSw: (probeZSw) => set({ probeZSw }),
 }));

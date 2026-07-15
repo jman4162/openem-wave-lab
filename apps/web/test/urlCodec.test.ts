@@ -65,6 +65,22 @@ describe('URL codec', () => {
     expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
   });
 
+  it('encode then decode is the identity (standing waves)', () => {
+    const snapshot: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'standing-waves',
+      standingWave: {
+        frequencyHz: 1e9,
+        E0: 1,
+        gammaMag: 0.5,
+        gammaPhaseDeg: -60,
+        epsilonR: 1,
+      },
+      probeZSw: -1.25,
+    };
+    expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
+  });
+
   it('3D surface flag round-trips (spreading and interface)', () => {
     const spreading3d: SceneSnapshot = {
       ...defaultSceneSnapshot,

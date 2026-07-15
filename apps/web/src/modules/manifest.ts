@@ -2,8 +2,10 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultStandingWaveState,
   defaultVelocityState,
   planarInterfaceModel,
+  standingWaveModel,
   planeWaveModel,
   spreadingModel,
   velocityModel,
@@ -19,7 +21,7 @@ import type { SceneId } from '../state/store';
 export interface ModuleManifest {
   id: SceneId;
   /** Store slice holding this module's params. */
-  sliceKey: 'planeWave' | 'spreading' | 'planarInterface' | 'velocity';
+  sliceKey: 'planeWave' | 'spreading' | 'planarInterface' | 'velocity' | 'standingWave';
   parameters: ParameterDefinition[];
   defaults: Record<string, unknown>;
   /** URL short key -> numeric param key in the slice. Distinct across modules. */
@@ -30,7 +32,7 @@ export interface ModuleManifest {
   /** Flat store keys this module serializes (probe positions, view flags). */
   extraNums: {
     short: string;
-    storeKey: 'probeZeta' | 'probeRho' | 'probeX' | 'probeZ';
+    storeKey: 'probeZeta' | 'probeRho' | 'probeX' | 'probeZ' | 'probeZSw';
     min: number;
     max: number;
   }[];
@@ -126,6 +128,20 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
     },
     extraNums: [],
     extraEnums: [{ short: 'vv', storeKey: 'velocityView', values: ['beat', 'pulse'] }],
+  },
+  {
+    id: 'standing-waves',
+    sliceKey: 'standingWave',
+    parameters: standingWaveModel.parameters,
+    defaults: defaultStandingWaveState as unknown as Record<string, unknown>,
+    urlParams: {
+      swf: 'frequencyHz',
+      swe0: 'E0',
+      gm: 'gammaMag',
+      gp: 'gammaPhaseDeg',
+      swepsr: 'epsilonR',
+    },
+    extraNums: [{ short: 'swp', storeKey: 'probeZSw', min: -4, max: 0 }],
   },
 ];
 

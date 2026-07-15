@@ -2,8 +2,10 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultStandingWaveState,
   defaultVelocityState,
   type PlanarInterfaceState,
+  type StandingWaveState,
   type PlaneWaveState,
   type SpreadingState,
   type VelocityState,
@@ -25,6 +27,7 @@ export interface SceneSnapshot {
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
   velocity: VelocityState;
+  standingWave: StandingWaveState;
   tau: number;
   playing: boolean;
   speed: number;
@@ -32,6 +35,7 @@ export interface SceneSnapshot {
   probeRho: number;
   probeX: number;
   probeZ: number;
+  probeZSw: number;
   spreadingKind: SpreadingViewKind;
   spreadingCompare: boolean;
   spreadingEnvelope: boolean;
@@ -47,6 +51,7 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
   velocity: defaultVelocityState,
+  standingWave: defaultStandingWaveState,
   tau: 0,
   playing: true,
   speed: 0.25,
@@ -54,6 +59,7 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   probeRho: 1,
   probeX: 0,
   probeZ: -0.5,
+  probeZSw: -0.625,
   spreadingKind: 'cylindrical',
   spreadingCompare: true,
   spreadingEnvelope: false,
@@ -127,6 +133,7 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
     spreading: { ...defaultSpreadingState },
     planarInterface: { ...defaultPlanarInterfaceState },
     velocity: { ...defaultVelocityState },
+    standingWave: { ...defaultStandingWaveState },
   };
 
   const manifest = getManifest(scene);
