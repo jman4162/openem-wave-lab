@@ -50,8 +50,15 @@ export function InterfaceSidebar() {
   const f = interfaceFieldsAt(params, derived, probeX * lambda, probeZ * lambda, 0);
   const S = timeAveragedPoynting(f.Ephasor, f.Hphasor);
 
+  const view3d = useWaveLabStore((s) => s.interfaceView3d);
+  const setView3d = useWaveLabStore((s) => s.setInterfaceView3d);
+
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+      <label>
+        <input type="checkbox" checked={view3d} onChange={(e) => setView3d(e.target.checked)} /> 3D
+        surface (orbit with drag / pinch; k and ⟨S⟩ arrows shown in 2D view)
+      </label>
       <h3 style={{ margin: '8px 0 2px', fontSize: 13 }}>Reflection and transmission</h3>
       <Row label="regime" value={REGIME_LABELS[derived.regime] ?? derived.regime} />
       <Row

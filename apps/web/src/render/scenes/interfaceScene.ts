@@ -4,12 +4,16 @@ import {
   Mesh,
   MeshBasicMaterial,
   OrthographicCamera,
+  PerspectiveCamera,
   PlaneGeometry,
   RingGeometry,
   Scene,
+  SphereGeometry,
   Vector3,
+  type Camera,
   type WebGPURenderer,
 } from 'three/webgpu';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   cabs,
   derivePlanarInterface,
@@ -20,6 +24,7 @@ import {
 } from '@openem/physics-core';
 import { useWaveLabStore } from '../../state/store';
 import { HeatmapLayer } from '../heatmapLayer';
+import { HeightFieldLayer } from '../heightFieldLayer';
 import { smallViewport } from '../quality';
 import type { SceneController } from '../../modules/types';
 
@@ -46,12 +51,26 @@ const toSceneY = (zOverLambda: number): number => zOverLambda * UNIT + INTERFACE
  * (1/2)Re{E x H*} on a coarse grid, never from k (under TIR they visibly run
  * along the interface). Fixed normalization E0(1+|r|) so TIR honestly decays.
  */
+const HEIGHT_SCALE = 0.3;
+
 export class InterfaceScene implements SceneController {
   readonly scene = new Scene();
-  readonly camera = new OrthographicCamera(-2, 2, 1.35, -1.35, 0.1, 10);
+  camera: Camera;
 
+  private orthoCamera = new OrthographicCamera(-2, 2, 1.35, -1.35, 0.1, 10);
+  private perspCamera = new PerspectiveCamera(50, 1.6, 0.01, 100);
+  private controls: OrbitControls;
+  /** 2D overlay group (heatmap quad, arrows, interface line, ring probe). */
   private group = new Group();
   private layer: HeatmapLayer;
+  /** 3D surface view: local XY plane rotated flat, height along world y. */
+  private surfaceGroup = new Group();
+  private surface: HeightFieldLayer;
+  private surfaceProbe: Mesh;
+  private readonly surfaceGrid = smallViewport() ? 96 : 128;
+  private surfaceScalarBuf: Float32Array;
+  private surfacePointsBuf: Float32Array;
+  private lastView3d: boolean | null = null;
   private probeMarker: Mesh;
   private kArrows: { incident: ArrowHelper; reflected: ArrowHelper; transmitted: ArrowHelper };
   private sArrows: ArrowHelper[] = [];
@@ -62,9 +81,49 @@ export class InterfaceScene implements SceneController {
   private scalarBuf: Float32Array;
   private aspect = 1.6;
 
-  constructor(_renderer: WebGPURenderer, _canvas: HTMLCanvasElement) {
-    this.camera.position.set(0, 0, 5);
+  constructor(_renderer: WebGPURenderer, canvas: HTMLCanvasElement) {
+    this.orthoCamera.position.set(0, 0, 5);
+    this.perspCamera.position.set(2.2, 1.8, 2.6);
+    this.camera = this.orthoCamera;
+    this.controls = new OrbitControls(this.perspCamera, canvas);
+    this.controls.enabled = false;
     this.scene.add(this.group);
+
+    // 3D surface of the continuous scalar; the smooth seam across the wall
+    // IS the tangential boundary condition, visible from any angle.
+    this.surfaceGroup.rotation.x = -Math.PI / 2;
+    this.surfaceGroup.visible = false;
+    this.scene.add(this.surfaceGroup);
+    this.surface = new HeightFieldLayer(
+      this.surfaceGroup,
+      this.surfaceGrid,
+      QUAD,
+      QUAD,
+      HEIGHT_SCALE,
+    );
+    this.surfaceScalarBuf = new Float32Array(2 * this.surfaceGrid * this.surfaceGrid);
+    this.surfacePointsBuf = new Float32Array(3 * this.surfaceGrid * this.surfaceGrid);
+    // Translucent vertical wall marking the medium boundary (z = 0 maps to
+    // world z = -INTERFACE_Y after the flat rotation).
+    const wall = new Mesh(
+      new PlaneGeometry(QUAD, 2.8 * HEIGHT_SCALE),
+      new MeshBasicMaterial({
+        color: 0xe5e7eb,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false,
+        side: 2,
+      }),
+    );
+    wall.position.set(0, 0, -INTERFACE_Y);
+    wall.rotation.y = 0;
+    this.scene.add(wall);
+    this.surfaceWall = wall;
+    this.surfaceProbe = new Mesh(
+      new SphereGeometry(0.03, 16, 16),
+      new MeshBasicMaterial({ color: 0xffffff }),
+    );
+    this.surfaceGroup.add(this.surfaceProbe);
 
     this.gridPointsBuf = new Float32Array(3 * this.grid * this.grid);
     this.scalarBuf = new Float32Array(2 * this.grid * this.grid);
@@ -114,15 +173,19 @@ export class InterfaceScene implements SceneController {
     // Grid points are fixed in wavelength units; physical coords set per params.
   }
 
+  private surfaceWall: Mesh;
+
   resize(width: number, height: number): void {
     this.aspect = width / height;
+    this.perspCamera.aspect = this.aspect;
+    this.perspCamera.updateProjectionMatrix();
     const halfH = Math.max(1.35, 1.5 / this.aspect);
     const halfW = halfH * this.aspect;
-    this.camera.left = -halfW;
-    this.camera.right = halfW;
-    this.camera.top = halfH;
-    this.camera.bottom = -halfH;
-    this.camera.updateProjectionMatrix();
+    this.orthoCamera.left = -halfW;
+    this.orthoCamera.right = halfW;
+    this.orthoCamera.top = halfH;
+    this.orthoCamera.bottom = -halfH;
+    this.orthoCamera.updateProjectionMatrix();
   }
 
   private recompute(params: PlanarInterfaceState): void {
@@ -147,7 +210,29 @@ export class InterfaceScene implements SceneController {
       this.scalarBuf[2 * i + 1] = source[6 * i + 3] ?? 0;
     }
     const incAmp = params.polarization === 'TE' ? params.E0 : params.E0 / derived.eta1;
-    this.layer.setPhasors(this.scalarBuf, incAmp * (1 + cabs(derived.r)));
+    const norm = incAmp * (1 + cabs(derived.r));
+    this.layer.setPhasors(this.scalarBuf, norm);
+    this.surfaceNorm = norm;
+
+    // Surface phasors at the height-field resolution.
+    const m = this.surfaceGrid;
+    for (let iz = 0; iz < m; iz++) {
+      const z = (Z_MIN + ((Z_MAX - Z_MIN) * iz) / (m - 1)) * lambda;
+      for (let ix = 0; ix < m; ix++) {
+        const i = iz * m + ix;
+        this.surfacePointsBuf[3 * i] = (-X_SPAN / 2 + (X_SPAN * ix) / (m - 1)) * lambda;
+        this.surfacePointsBuf[3 * i + 1] = 0;
+        this.surfacePointsBuf[3 * i + 2] = z;
+      }
+    }
+    const surfaceSample = planarInterfaceModel.sampleField(params, this.surfacePointsBuf, 0);
+    const surfaceSource =
+      params.polarization === 'TE' ? surfaceSample.Ephasor : surfaceSample.Hphasor;
+    for (let i = 0; i < m * m; i++) {
+      this.surfaceScalarBuf[2 * i] = surfaceSource[6 * i + 2] ?? 0;
+      this.surfaceScalarBuf[2 * i + 1] = surfaceSource[6 * i + 3] ?? 0;
+    }
+    this.surface.setPhasors(this.surfaceScalarBuf, norm);
 
     // k arrows: incident and reflected in medium 1; transmitted only when the
     // wave actually propagates (phase direction from Re kz2).
@@ -200,21 +285,55 @@ export class InterfaceScene implements SceneController {
     this.lastParams = params;
   }
 
+  private surfaceNorm = 1;
+
   frame(dt: number): void {
     const state = useWaveLabStore.getState();
     if (state.playing) {
       useWaveLabStore.setState({ tau: state.tau + dt * state.speed });
     }
-    const { planarInterface, tau, probeX, probeZ } = useWaveLabStore.getState();
+    const { planarInterface, tau, probeX, probeZ, interfaceView3d } = useWaveLabStore.getState();
     if (planarInterface !== this.lastParams) this.recompute(planarInterface);
 
-    this.probeMarker.position.x = toSceneX(probeX);
-    this.probeMarker.position.y = toSceneY(probeZ);
+    if (interfaceView3d !== this.lastView3d) {
+      this.group.visible = !interfaceView3d;
+      this.surfaceGroup.visible = interfaceView3d;
+      this.surfaceWall.visible = interfaceView3d;
+      this.camera = interfaceView3d ? this.perspCamera : this.orthoCamera;
+      this.controls.enabled = interfaceView3d;
+      this.lastView3d = interfaceView3d;
+    }
 
-    this.layer.update(2 * Math.PI * tau);
+    const omegaT = 2 * Math.PI * tau;
+    if (interfaceView3d) {
+      this.surface.update(omegaT);
+      // Probe sphere rides the oscillating surface.
+      const derived = derivePlanarInterface(planarInterface);
+      const f = interfaceFieldsAt(
+        planarInterface,
+        derived,
+        probeX * derived.wavelength1M,
+        probeZ * derived.wavelength1M,
+        0,
+      );
+      const scalar = planarInterface.polarization === 'TE' ? f.Ephasor.y : f.Hphasor.y;
+      const value = scalar.re * Math.cos(omegaT) + scalar.im * Math.sin(omegaT);
+      const displacement = Math.max(
+        -1.25 * HEIGHT_SCALE,
+        Math.min(1.25 * HEIGHT_SCALE, (value / this.surfaceNorm) * HEIGHT_SCALE),
+      );
+      this.surfaceProbe.position.set(toSceneX(probeX), toSceneY(probeZ), displacement + 0.02);
+      this.controls.update();
+    } else {
+      this.probeMarker.position.x = toSceneX(probeX);
+      this.probeMarker.position.y = toSceneY(probeZ);
+      this.layer.update(omegaT);
+    }
   }
 
   dispose(): void {
+    this.controls.dispose();
     this.layer.dispose();
+    this.surface.dispose();
   }
 }
