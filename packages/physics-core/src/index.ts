@@ -16,3 +16,7 @@ export * from './interface/state';
 export * from './interface/derive';
 export * from './interface/fields';
 export * from './interface/model';
+export * from './velocity/state';
+export * from './velocity/derive';
+export * from './velocity/fields';
+export * from './velocity/model';
