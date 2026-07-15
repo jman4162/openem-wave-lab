@@ -22,6 +22,11 @@ export interface ModuleManifest {
   urlParams: Record<string, string>;
   /** Flat store keys this module serializes (probe positions, view flags). */
   extraNums: { short: string; storeKey: 'probeZeta' | 'probeRho'; min: number; max: number }[];
+  extraBools?: {
+    short: string;
+    storeKey: 'spreadingCompare' | 'spreadingEnvelope' | 'spreadingLogPlot';
+  }[];
+  extraEnums?: { short: string; storeKey: 'spreadingKind'; values: readonly string[] }[];
 }
 
 export const MODULE_MANIFESTS: ModuleManifest[] = [
@@ -53,6 +58,14 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
       smur: 'muR',
     },
     extraNums: [{ short: 'pr', storeKey: 'probeRho', min: 0.25, max: 8 }],
+    extraBools: [
+      { short: 'cmp', storeKey: 'spreadingCompare' },
+      { short: 'env', storeKey: 'spreadingEnvelope' },
+      { short: 'logp', storeKey: 'spreadingLogPlot' },
+    ],
+    extraEnums: [
+      { short: 'wk', storeKey: 'spreadingKind', values: ['plane', 'cylindrical', 'spherical'] },
+    ],
   },
 ];
 

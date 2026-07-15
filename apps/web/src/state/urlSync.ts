@@ -10,6 +10,10 @@ export const snapshotOf = (s: WaveLabState): SceneSnapshot => ({
   speed: s.speed,
   probeZeta: s.probeZeta,
   probeRho: s.probeRho,
+  spreadingKind: s.spreadingKind,
+  spreadingCompare: s.spreadingCompare,
+  spreadingEnvelope: s.spreadingEnvelope,
+  spreadingLogPlot: s.spreadingLogPlot,
 });
 
 /**

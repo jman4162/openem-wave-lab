@@ -26,6 +26,14 @@ export interface WaveLabState {
   probeZeta: number;
   /** Spreading-module radial probe, in wavelengths. */
   probeRho: number;
+  /** Wave kind shown in the spreading module's single view. */
+  spreadingKind: SpreadingViewKind;
+  /** Side-by-side plane/cylindrical/spherical comparison. */
+  spreadingCompare: boolean;
+  /** Show |psi| envelope instead of instantaneous Re{psi}. */
+  spreadingEnvelope: boolean;
+  /** Log-log radial plots. */
+  spreadingLogPlot: boolean;
   setScene: (scene: SceneId) => void;
   setPlaneWaveParam: (key: keyof PlaneWaveState, value: number) => void;
   setSpreadingParam: (key: keyof SpreadingState, value: number) => void;
@@ -35,7 +43,13 @@ export interface WaveLabState {
   stepPhaseDeg: (deg: number) => void;
   setProbeZeta: (zeta: number) => void;
   setProbeRho: (rho: number) => void;
+  setSpreadingKind: (kind: SpreadingViewKind) => void;
+  setSpreadingCompare: (compare: boolean) => void;
+  setSpreadingEnvelope: (envelope: boolean) => void;
+  setSpreadingLogPlot: (log: boolean) => void;
 }
+
+export type SpreadingViewKind = 'plane' | 'cylindrical' | 'spherical';
 
 export const useWaveLabStore = create<WaveLabState>((set) => ({
   scene: 'plane-wave',
@@ -46,6 +60,10 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   speed: 0.25,
   probeZeta: 0.5,
   probeRho: 1,
+  spreadingKind: 'cylindrical',
+  spreadingCompare: true,
+  spreadingEnvelope: false,
+  spreadingLogPlot: false,
   setScene: (scene) => set({ scene }),
   setPlaneWaveParam: (key, value) => set((s) => ({ planeWave: { ...s.planeWave, [key]: value } })),
   setSpreadingParam: (key, value) => set((s) => ({ spreading: { ...s.spreading, [key]: value } })),
@@ -55,4 +73,8 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   stepPhaseDeg: (deg) => set((s) => ({ tau: s.tau + deg / 360, playing: false })),
   setProbeZeta: (zeta) => set({ probeZeta: zeta }),
   setProbeRho: (rho) => set({ probeRho: rho }),
+  setSpreadingKind: (spreadingKind) => set({ spreadingKind }),
+  setSpreadingCompare: (spreadingCompare) => set({ spreadingCompare }),
+  setSpreadingEnvelope: (spreadingEnvelope) => set({ spreadingEnvelope }),
+  setSpreadingLogPlot: (spreadingLogPlot) => set({ spreadingLogPlot }),
 }));

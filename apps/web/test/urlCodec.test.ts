@@ -31,14 +31,22 @@ describe('URL codec', () => {
     expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
   });
 
-  it('encode then decode is the identity (spreading)', () => {
+  it('encode then decode is the identity (spreading, incl. view flags)', () => {
     const snapshot: SceneSnapshot = {
       ...defaultSceneSnapshot,
       scene: 'spreading',
       spreading: { frequencyHz: 3e9, amplitude: 1.5, epsilonR: 9, muR: 1 },
       probeRho: 2.5,
+      spreadingKind: 'spherical',
+      spreadingCompare: false,
+      spreadingEnvelope: true,
+      spreadingLogPlot: true,
     };
     expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
+  });
+
+  it('invalid enum values fall back to the default wave kind', () => {
+    expect(decodeScene('v=1&scene=spreading&wk=hexagonal').spreadingKind).toBe('cylindrical');
   });
 
   it('BACKWARD COMPAT: a literal Phase-0 link decodes unchanged', () => {

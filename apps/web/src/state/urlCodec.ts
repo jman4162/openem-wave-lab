@@ -5,7 +5,7 @@ import {
   type SpreadingState,
 } from '@openem/physics-core';
 import { DEFAULT_SCENE, getManifest, MODULE_MANIFESTS } from '../modules/manifest';
-import type { SceneId } from './store';
+import type { SceneId, SpreadingViewKind } from './store';
 
 /**
  * Scene state <-> URL search params, schema version 1. Flat key=value pairs;
@@ -24,6 +24,10 @@ export interface SceneSnapshot {
   speed: number;
   probeZeta: number;
   probeRho: number;
+  spreadingKind: SpreadingViewKind;
+  spreadingCompare: boolean;
+  spreadingEnvelope: boolean;
+  spreadingLogPlot: boolean;
 }
 
 export const defaultSceneSnapshot: SceneSnapshot = {
@@ -35,6 +39,10 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   speed: 0.25,
   probeZeta: 0.5,
   probeRho: 1,
+  spreadingKind: 'cylindrical',
+  spreadingCompare: true,
+  spreadingEnvelope: false,
+  spreadingLogPlot: false,
 };
 
 /** Compact, round-trip-stable number encoding. */
@@ -56,6 +64,16 @@ export function encodeScene(snapshot: SceneSnapshot): URLSearchParams {
     for (const extra of manifest.extraNums) {
       if (snapshot[extra.storeKey] !== defaultSceneSnapshot[extra.storeKey]) {
         out.set(extra.short, enc(snapshot[extra.storeKey]));
+      }
+    }
+    for (const extra of manifest.extraBools ?? []) {
+      if (snapshot[extra.storeKey] !== defaultSceneSnapshot[extra.storeKey]) {
+        out.set(extra.short, snapshot[extra.storeKey] ? '1' : '0');
+      }
+    }
+    for (const extra of manifest.extraEnums ?? []) {
+      if (snapshot[extra.storeKey] !== defaultSceneSnapshot[extra.storeKey]) {
+        out.set(extra.short, snapshot[extra.storeKey]);
       }
     }
   }
@@ -102,6 +120,16 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
       if (raw === null) continue;
       const value = parseFloat(raw);
       if (Number.isFinite(value)) snapshot[extra.storeKey] = clamp(value, extra.min, extra.max);
+    }
+    for (const extra of manifest.extraBools ?? []) {
+      const raw = input.get(extra.short);
+      if (raw !== null) snapshot[extra.storeKey] = raw !== '0';
+    }
+    for (const extra of manifest.extraEnums ?? []) {
+      const raw = input.get(extra.short);
+      if (raw !== null && extra.values.includes(raw)) {
+        snapshot[extra.storeKey] = raw as SpreadingViewKind;
+      }
     }
   }
 
