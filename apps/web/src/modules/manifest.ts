@@ -1,6 +1,8 @@
 import {
+  defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  planarInterfaceModel,
   planeWaveModel,
   spreadingModel,
   type ParameterDefinition,
@@ -10,18 +12,26 @@ import type { SceneId } from '../state/store';
 /**
  * React-free description of each module for the URL codec and other
  * non-rendering consumers. The full module definitions (scene factories,
- * panel components) live in registry.tsx and share these ids.
+ * panel components) live in the registry and share these ids.
  */
 export interface ModuleManifest {
   id: SceneId;
   /** Store slice holding this module's params. */
-  sliceKey: 'planeWave' | 'spreading';
+  sliceKey: 'planeWave' | 'spreading' | 'planarInterface';
   parameters: ParameterDefinition[];
-  defaults: Record<string, number>;
-  /** URL short key -> param key. Distinct across modules for readability. */
+  defaults: Record<string, unknown>;
+  /** URL short key -> numeric param key in the slice. Distinct across modules. */
   urlParams: Record<string, string>;
+  /** Non-numeric slice params (enums as strings, booleans as 0/1). */
+  sliceEnums?: { short: string; key: string; values: readonly string[] }[];
+  sliceBools?: { short: string; key: string }[];
   /** Flat store keys this module serializes (probe positions, view flags). */
-  extraNums: { short: string; storeKey: 'probeZeta' | 'probeRho'; min: number; max: number }[];
+  extraNums: {
+    short: string;
+    storeKey: 'probeZeta' | 'probeRho' | 'probeX' | 'probeZ';
+    min: number;
+    max: number;
+  }[];
   extraBools?: {
     short: string;
     storeKey: 'spreadingCompare' | 'spreadingEnvelope' | 'spreadingLogPlot';
@@ -34,7 +44,7 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
     id: 'plane-wave',
     sliceKey: 'planeWave',
     parameters: planeWaveModel.parameters,
-    defaults: defaultPlaneWaveState as unknown as Record<string, number>,
+    defaults: defaultPlaneWaveState as unknown as Record<string, unknown>,
     urlParams: {
       f: 'frequencyHz',
       ex: 'E0x',
@@ -50,7 +60,7 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
     id: 'spreading',
     sliceKey: 'spreading',
     parameters: spreadingModel.parameters,
-    defaults: defaultSpreadingState as unknown as Record<string, number>,
+    defaults: defaultSpreadingState as unknown as Record<string, unknown>,
     urlParams: {
       sf: 'frequencyHz',
       A: 'amplitude',
@@ -65,6 +75,28 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
     ],
     extraEnums: [
       { short: 'wk', storeKey: 'spreadingKind', values: ['plane', 'cylindrical', 'spherical'] },
+    ],
+  },
+  {
+    id: 'planar-interface',
+    sliceKey: 'planarInterface',
+    parameters: planarInterfaceModel.parameters,
+    defaults: defaultPlanarInterfaceState as unknown as Record<string, unknown>,
+    urlParams: {
+      iff: 'frequencyHz',
+      th: 'thetaDeg',
+      e0: 'E0',
+      e1: 'eps1R',
+      m1: 'mu1R',
+      e2: 'eps2R',
+      m2: 'mu2R',
+      s2: 'sigma2',
+    },
+    sliceEnums: [{ short: 'pol', key: 'polarization', values: ['TE', 'TM'] }],
+    sliceBools: [{ short: 'pec', key: 'pec' }],
+    extraNums: [
+      { short: 'px', storeKey: 'probeX', min: -2, max: 2 },
+      { short: 'pz', storeKey: 'probeZ', min: -2.5, max: 1.5 },
     ],
   },
 ];

@@ -1,6 +1,8 @@
 import {
+  defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  type PlanarInterfaceState,
   type PlaneWaveState,
   type SpreadingState,
 } from '@openem/physics-core';
@@ -19,11 +21,14 @@ export interface SceneSnapshot {
   scene: SceneId;
   planeWave: PlaneWaveState;
   spreading: SpreadingState;
+  planarInterface: PlanarInterfaceState;
   tau: number;
   playing: boolean;
   speed: number;
   probeZeta: number;
   probeRho: number;
+  probeX: number;
+  probeZ: number;
   spreadingKind: SpreadingViewKind;
   spreadingCompare: boolean;
   spreadingEnvelope: boolean;
@@ -34,11 +39,14 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   scene: DEFAULT_SCENE,
   planeWave: defaultPlaneWaveState,
   spreading: defaultSpreadingState,
+  planarInterface: defaultPlanarInterfaceState,
   tau: 0,
   playing: true,
   speed: 0.25,
   probeZeta: 0.5,
   probeRho: 1,
+  probeX: 0,
+  probeZ: -0.5,
   spreadingKind: 'cylindrical',
   spreadingCompare: true,
   spreadingEnvelope: false,
@@ -57,9 +65,15 @@ export function encodeScene(snapshot: SceneSnapshot): URLSearchParams {
 
   const manifest = getManifest(snapshot.scene);
   if (manifest) {
-    const slice = snapshot[manifest.sliceKey] as unknown as Record<string, number>;
+    const slice = snapshot[manifest.sliceKey] as unknown as Record<string, unknown>;
     for (const [short, key] of Object.entries(manifest.urlParams)) {
-      if (slice[key] !== manifest.defaults[key]) out.set(short, enc(slice[key] ?? 0));
+      if (slice[key] !== manifest.defaults[key]) out.set(short, enc(Number(slice[key] ?? 0)));
+    }
+    for (const se of manifest.sliceEnums ?? []) {
+      if (slice[se.key] !== manifest.defaults[se.key]) out.set(se.short, String(slice[se.key]));
+    }
+    for (const sb of manifest.sliceBools ?? []) {
+      if (slice[sb.key] !== manifest.defaults[sb.key]) out.set(sb.short, slice[sb.key] ? '1' : '0');
     }
     for (const extra of manifest.extraNums) {
       if (snapshot[extra.storeKey] !== defaultSceneSnapshot[extra.storeKey]) {
@@ -101,12 +115,13 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
     scene,
     planeWave: { ...defaultPlaneWaveState },
     spreading: { ...defaultSpreadingState },
+    planarInterface: { ...defaultPlanarInterfaceState },
   };
 
   const manifest = getManifest(scene);
   if (manifest) {
     const clampDefs = new Map(manifest.parameters.map((d) => [d.key, d]));
-    const slice = snapshot[manifest.sliceKey] as unknown as Record<string, number>;
+    const slice = snapshot[manifest.sliceKey] as unknown as Record<string, unknown>;
     for (const [short, key] of Object.entries(manifest.urlParams)) {
       const raw = input.get(short);
       if (raw === null) continue;
@@ -114,6 +129,14 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
       if (!Number.isFinite(value)) continue;
       const def = clampDefs.get(key);
       slice[key] = def ? clamp(value, def.min, def.max) : value;
+    }
+    for (const se of manifest.sliceEnums ?? []) {
+      const raw = input.get(se.short);
+      if (raw !== null && se.values.includes(raw)) slice[se.key] = raw;
+    }
+    for (const sb of manifest.sliceBools ?? []) {
+      const raw = input.get(sb.short);
+      if (raw !== null) slice[sb.key] = raw !== '0';
     }
     for (const extra of manifest.extraNums) {
       const raw = input.get(extra.short);

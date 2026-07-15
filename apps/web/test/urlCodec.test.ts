@@ -49,6 +49,41 @@ describe('URL codec', () => {
     expect(decodeScene('v=1&scene=spreading&wk=hexagonal').spreadingKind).toBe('cylindrical');
   });
 
+  it('encode then decode is the identity (planar interface, incl. discrete params)', () => {
+    const snapshot: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'planar-interface',
+      planarInterface: {
+        frequencyHz: 1e9,
+        thetaDeg: 45,
+        polarization: 'TM',
+        E0: 1,
+        eps1R: 4,
+        mu1R: 1,
+        eps2R: 1,
+        mu2R: 1,
+        sigma2: 0.3,
+        pec: false,
+      },
+      probeX: 0.5,
+      probeZ: 0.25,
+    };
+    expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
+  });
+
+  it('PEC flag and polarization survive the round trip; junk enum ignored', () => {
+    const snapshot: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'planar-interface',
+      planarInterface: { ...defaultSceneSnapshot.planarInterface, pec: true },
+    };
+    const decoded = decodeScene(encodeScene(snapshot));
+    expect(decoded.planarInterface.pec).toBe(true);
+    expect(decodeScene('v=1&scene=planar-interface&pol=XY').planarInterface.polarization).toBe(
+      'TE',
+    );
+  });
+
   it('BACKWARD COMPAT: a literal Phase-0 link decodes unchanged', () => {
     // Published before the scene key existed; must keep working forever.
     const decoded = decodeScene('v=1&ey=1&dphi=90&pl=0&t=0.75');
