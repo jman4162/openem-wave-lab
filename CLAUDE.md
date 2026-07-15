@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 OpenEM Wave Lab: an open-source, browser-based interactive learning platform for
-electromagnetic-wave physics. Phase 0 (plane-wave scene) is implemented; the
-product spec's later phases add spherical/cylindrical waves, interfaces,
-dispersion, negative refraction, and whispering-gallery modes.
+electromagnetic-wave physics. Implemented modules: plane wave (3D vector scene),
+wave spreading (plane/cylindrical/spherical heatmap comparison), and planar
+interface (Fresnel/Brewster/TIR/PEC). Later phases add velocities, standing
+waves, dispersion, negative refraction, and whispering-gallery modes.
 
 ## Commands
 
@@ -44,11 +45,17 @@ WebGL2 backend for testing; the badge in the corner shows the active backend.
 Two workspace packages, deliberately lean (decision record and extraction
 triggers in `docs/architecture.md`):
 
-- `packages/physics-core` — pure TypeScript physics: complex/vec3 math,
-  constants, the `PhysicsModel` contract (`src/model.ts`), and the plane-wave
-  model (`src/plane-wave/`). No three.js/React/DOM dependency, ever.
-- `apps/web` — Vite + React 19 + three.js app. Rendering consumes models only
-  through `sampleField()`/`observables()`; no wave formula lives in the app.
+- `packages/physics-core` — pure TypeScript physics: complex/vec3/Bessel math,
+  constants, the `PhysicsModel` contract (`src/model.ts`), shared sample
+  layout (`src/sample.ts`), and the models (`src/plane-wave/`,
+  `src/spreading/`, `src/interface/`). No three.js/React/DOM dependency, ever.
+- `apps/web` — Vite + React 19 + three.js app. A module registry
+  (`src/modules/registry.ts`) maps each experiment to a scene factory plus
+  Controls/Sidebar/Equations panels; `src/modules/manifest.ts` is the
+  React-free description the URL codec uses. Render code splits into
+  store-free primitives (`src/render/*.ts`) and per-module scenes
+  (`src/render/scenes/*`). Rendering consumes models only through
+  `sampleField()`/`observables()`; no wave formula lives in the app.
 
 Key structural facts:
 

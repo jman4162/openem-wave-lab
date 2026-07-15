@@ -14,14 +14,20 @@ field vectors, phase fronts, and power flow update together in real time.
 ## Status
 
 Early development. The [live demo](https://jman4162.github.io/openem-wave-lab/)
-has the Phase 0 prototype: a plane-wave scene with E/H/k vector visualization,
-time scrubbing, a movable field probe, a polarization ellipse, a live equation
-panel, and shareable experiment URLs.
+has three modules, all with time scrubbing, movable probes, live equation
+panels with runtime validation, and shareable experiment URLs:
 
-Planned modules (see the roadmap in `docs/`): plane waves and polarization,
-spherical and cylindrical spreading, reflection and transmission at interfaces,
-phase/group/energy velocity, standing waves, negative refraction with causal
-dispersive materials, and whispering-gallery modes.
+- **Plane wave** — 3D E/H/k vector scene with polarization ellipse (linear,
+  circular, elliptical; IEEE handedness) and lossy-media decay.
+- **Wave spreading** — side-by-side plane / cylindrical H₀⁽¹⁾ / spherical
+  field heatmaps with amplitude-vs-radius plots (r⁰, 1/√ρ, 1/r).
+- **Planar interface** — TE/TM Fresnel with Brewster angle, total internal
+  reflection with evanescent fields, lossy media, and PEC mirrors; Poynting
+  arrows computed from E×H.
+
+Planned modules (see the roadmap in `docs/`): phase/group/energy velocity,
+standing waves, negative refraction with causal dispersive materials, and
+whispering-gallery modes.
 
 ## Principles
 

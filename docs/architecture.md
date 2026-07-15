@@ -23,6 +23,20 @@ The renderer calls `sampleField` and `observables` generically. No wave formula
 exists in `apps/web`; the rendering layer never modifies field behavior for
 visual effect.
 
+## Module registry
+
+The app hosts multiple experiments through a small registry
+(`apps/web/src/modules/registry.ts`). Each `WaveModule` owns a scene factory
+(`createScene` returning a `SceneController`) and three panel components
+(`Controls`, `Sidebar`, `Equations`); the app shell (nav, canvas, time
+controls, URL sync) is module-agnostic. A React-free manifest
+(`modules/manifest.ts`) describes each module's URL keys, defaults, and clamp
+bounds for the codec, so codec tests never import React components.
+
+Switching modules remounts `SceneView` (keyed by module id), which disposes
+and recreates the renderer cleanly. Each module's parameters live in their own
+store slice and survive switching.
+
 ## Repository layout (decision record)
 
 The product spec describes an end-state monorepo with ~10 packages
@@ -42,12 +56,33 @@ package.json/tsconfig/exports surface with no enforcement benefit.
 
 Extraction triggers (create the package when the trigger fires, not before):
 
-- `packages/rendering` — when a second scene (e.g. spherical wave) reuses glyph
-  or scene-graph code.
-- `packages/analytic-solutions` / `packages/material-models` — when a second
-  model family (interfaces, dispersive media) lands in physics-core.
+- `packages/rendering` — when a second CONSUMER (worker, second app, published
+  package) needs the render primitives. The original trigger ("second scene
+  reuses glyph code") fired with the spreading/interface modules, but every
+  consumer is still `apps/web`, so a package boundary would enforce nothing.
+  Instead, `apps/web/src/render/` is split into store-free primitives
+  (`arrowField`, `colormap`, `heatmapLayer`, `createRenderer`) and per-module
+  scenes (`render/scenes/*`, which may read the store); the primitives are the
+  future package, kept extraction-ready.
+- `packages/analytic-solutions` / `packages/material-models` — when splitting
+  one pure-TS package into several enforces something. The interface and
+  spreading models landed inside physics-core for the same reason as above.
 - `packages/lesson-schema` + `lesson-runtime` — when the first YAML lesson lands.
 - `packages/numerical-kernels` — Phase 3 (FDTD laboratory).
+
+## Heatmap rendering (60 fps mechanism)
+
+Time-harmonic fields let the expensive work happen once per parameter change:
+`HeatmapLayer` caches the complex spatial field (re/im interleaved), and each
+frame computes `Re{ψe^{−iωt}} = re·cos ωt + im·sin ωt` per texel through a
+256-entry colormap LUT into a `DataTexture` (2 mul + 1 add + lookup; ~1–2 ms
+at 256²). Scenes recompute the phasor grid only when their param slice
+changes (object-identity dirty check in `frame()`).
+
+No TSL/node materials are used. TSL is the designated escalation path when
+grids exceed ~512² (the Phase 3 FDTD laboratory); adopting it earlier would
+churn the pinned three.js surface and move physics-adjacent code where
+physics-core tests can't see it.
 
 ## TypeScript strategy
 

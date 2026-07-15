@@ -40,6 +40,28 @@ conjugating: replace `j` with `−i` everywhere.
 - Intrinsic impedance: `η = √(μ/ε_c)`, branch with `Re η > 0`.
 - For a plane wave along `k̂`: `H̃ = (1/η) k̂ × Ẽ`.
 
+## Planar interfaces
+
+For a plane wave incident from lossless medium 1 (z < 0) onto medium 2 at
+z = 0, with the plane of incidence x–z:
+
+- Maxwell curls under this convention: `∇×E = +iωμH`, `∇×H = −iωε_c E`
+  (the conjugates of the `e^{+jωt}` forms in Balanis/Pozar).
+- `k_x = k₁ sin θ` is conserved (this _is_ Snell's law);
+  `k_z2 = √(k₂² − k_x²)` with the branch **Im k_z2 ≥ 0**, so the transmitted
+  `e^{i k_z2 z}` decays away from the interface for both TIR and loss.
+- Fresnel coefficients in k_z form (valid verbatim for complex `k_z2`):
+  `r_TE = (k_z1/μ₁ − k_z2/μ₂)/(k_z1/μ₁ + k_z2/μ₂)`,
+  `r_TM = (k_z1/ε₁ − k_z2/ε_c2)/(k_z1/ε₁ + k_z2/ε_c2)`, each with `t = 1 + r`.
+- **`r_TM` is the H_y ratio** (the continuous scalar for TM). Textbooks using
+  the E-field ratio differ by a sign: `r_TM,E = −r_TM,H`. At normal incidence
+  `r_TM,E = r_TE = (η₂ − η₁)/(η₂ + η₁)`; this is pinned in tests.
+- Transmittance is computed from `⟨S_z⟩` at the boundary via `½Re{Ẽ×H̃*}` and
+  only cross-checked against the closed forms
+  `T_TE = Re{k_z2/μ₂}/(k_z1/μ₁)·|t|²`, `T_TM = Re{k_z2/ε_c2}/(k_z1/ε₁)·|t|²`.
+- PEC is the exact special case `r_TE = −1`, `r_TM,H = +1`, zero field in
+  medium 2 — never a large-σ approximation.
+
 ## Power and energy
 
 - Time-averaged Poynting vector: `⟨S⟩ = ½ Re{Ẽ × H̃*}`.
