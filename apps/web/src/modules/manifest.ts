@@ -2,9 +2,11 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultVelocityState,
   planarInterfaceModel,
   planeWaveModel,
   spreadingModel,
+  velocityModel,
   type ParameterDefinition,
 } from '@openem/physics-core';
 import type { SceneId } from '../state/store';
@@ -17,7 +19,7 @@ import type { SceneId } from '../state/store';
 export interface ModuleManifest {
   id: SceneId;
   /** Store slice holding this module's params. */
-  sliceKey: 'planeWave' | 'spreading' | 'planarInterface';
+  sliceKey: 'planeWave' | 'spreading' | 'planarInterface' | 'velocity';
   parameters: ParameterDefinition[];
   defaults: Record<string, unknown>;
   /** URL short key -> numeric param key in the slice. Distinct across modules. */
@@ -41,7 +43,11 @@ export interface ModuleManifest {
       | 'spreadingView3d'
       | 'interfaceView3d';
   }[];
-  extraEnums?: { short: string; storeKey: 'spreadingKind'; values: readonly string[] }[];
+  extraEnums?: {
+    short: string;
+    storeKey: 'spreadingKind' | 'velocityView';
+    values: readonly string[];
+  }[];
 }
 
 export const MODULE_MANIFESTS: ModuleManifest[] = [
@@ -105,6 +111,21 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
       { short: 'px', storeKey: 'probeX', min: -2, max: 2 },
       { short: 'pz', storeKey: 'probeZ', min: -2.5, max: 1.5 },
     ],
+  },
+  {
+    id: 'velocities',
+    sliceKey: 'velocity',
+    parameters: velocityModel.parameters,
+    defaults: defaultVelocityState as unknown as Record<string, unknown>,
+    urlParams: {
+      vf: 'frequencyHz',
+      vfc: 'cutoffFraction',
+      vdf: 'deltaFraction',
+      vsig: 'sigmaLambda',
+      vepsr: 'epsilonR',
+    },
+    extraNums: [],
+    extraEnums: [{ short: 'vv', storeKey: 'velocityView', values: ['beat', 'pulse'] }],
   },
 ];
 

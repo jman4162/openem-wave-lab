@@ -2,12 +2,14 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultVelocityState,
   type PlanarInterfaceState,
   type PlaneWaveState,
   type SpreadingState,
+  type VelocityState,
 } from '@openem/physics-core';
 import { DEFAULT_SCENE, getManifest, MODULE_MANIFESTS } from '../modules/manifest';
-import type { SceneId, SpreadingViewKind } from './store';
+import type { SceneId, SpreadingViewKind, VelocityView } from './store';
 
 /**
  * Scene state <-> URL search params, schema version 1. Flat key=value pairs;
@@ -22,6 +24,7 @@ export interface SceneSnapshot {
   planeWave: PlaneWaveState;
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
+  velocity: VelocityState;
   tau: number;
   playing: boolean;
   speed: number;
@@ -35,6 +38,7 @@ export interface SceneSnapshot {
   spreadingLogPlot: boolean;
   spreadingView3d: boolean;
   interfaceView3d: boolean;
+  velocityView: VelocityView;
 }
 
 export const defaultSceneSnapshot: SceneSnapshot = {
@@ -42,6 +46,7 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   planeWave: defaultPlaneWaveState,
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
+  velocity: defaultVelocityState,
   tau: 0,
   playing: true,
   speed: 0.25,
@@ -55,6 +60,7 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   spreadingLogPlot: false,
   spreadingView3d: false,
   interfaceView3d: false,
+  velocityView: 'beat',
 };
 
 /** Compact, round-trip-stable number encoding. */
@@ -120,6 +126,7 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
     planeWave: { ...defaultPlaneWaveState },
     spreading: { ...defaultSpreadingState },
     planarInterface: { ...defaultPlanarInterfaceState },
+    velocity: { ...defaultVelocityState },
   };
 
   const manifest = getManifest(scene);
@@ -155,7 +162,7 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
     for (const extra of manifest.extraEnums ?? []) {
       const raw = input.get(extra.short);
       if (raw !== null && extra.values.includes(raw)) {
-        snapshot[extra.storeKey] = raw as SpreadingViewKind;
+        (snapshot as unknown as Record<string, unknown>)[extra.storeKey] = raw;
       }
     }
   }

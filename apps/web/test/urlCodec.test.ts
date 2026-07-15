@@ -49,6 +49,22 @@ describe('URL codec', () => {
     expect(decodeScene('v=1&scene=spreading&wk=hexagonal').spreadingKind).toBe('cylindrical');
   });
 
+  it('encode then decode is the identity (velocities)', () => {
+    const snapshot: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'velocities',
+      velocity: {
+        frequencyHz: 2e9,
+        cutoffFraction: 0.9,
+        deltaFraction: 0.1,
+        sigmaLambda: 3,
+        epsilonR: 1,
+      },
+      velocityView: 'pulse',
+    };
+    expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
+  });
+
   it('3D surface flag round-trips (spreading and interface)', () => {
     const spreading3d: SceneSnapshot = {
       ...defaultSceneSnapshot,

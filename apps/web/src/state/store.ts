@@ -3,14 +3,18 @@ import {
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
+  defaultVelocityState,
   type PlanarInterfaceState,
   type PlaneWaveState,
   type SpreadingState,
+  type VelocityState,
 } from '@openem/physics-core';
 
-export type SceneId = 'plane-wave' | 'spreading' | 'planar-interface';
+export type SceneId = 'plane-wave' | 'spreading' | 'planar-interface' | 'velocities';
 
 export type SpreadingViewKind = 'plane' | 'cylindrical' | 'spherical';
+
+export type VelocityView = 'beat' | 'pulse';
 
 /**
  * One store for the whole app. Per-module parameters live in slices keyed by
@@ -22,6 +26,7 @@ export interface WaveLabState {
   planeWave: PlaneWaveState;
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
+  velocity: VelocityState;
   /** Simulation time in periods (tau = t/T); phase survives frequency changes. */
   tau: number;
   playing: boolean;
@@ -45,6 +50,8 @@ export interface WaveLabState {
   /** 3D height-field surface instead of the 2D heatmap (single view only). */
   spreadingView3d: boolean;
   interfaceView3d: boolean;
+  /** Velocity-module view: two-frequency beat or Gaussian pulse. */
+  velocityView: VelocityView;
   setScene: (scene: SceneId) => void;
   setPlaneWaveParam: (key: keyof PlaneWaveState, value: number) => void;
   setSpreadingParam: (key: keyof SpreadingState, value: number) => void;
@@ -66,6 +73,8 @@ export interface WaveLabState {
   setSpreadingLogPlot: (log: boolean) => void;
   setSpreadingView3d: (view3d: boolean) => void;
   setInterfaceView3d: (view3d: boolean) => void;
+  setVelocityParam: (key: keyof VelocityState, value: number) => void;
+  setVelocityView: (view: VelocityView) => void;
 }
 
 export const useWaveLabStore = create<WaveLabState>((set) => ({
@@ -73,6 +82,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   planeWave: defaultPlaneWaveState,
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
+  velocity: defaultVelocityState,
   tau: 0,
   playing: true,
   speed: 0.25,
@@ -86,6 +96,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   spreadingLogPlot: false,
   spreadingView3d: false,
   interfaceView3d: false,
+  velocityView: 'beat',
   setScene: (scene) => set({ scene }),
   setPlaneWaveParam: (key, value) => set((s) => ({ planeWave: { ...s.planeWave, [key]: value } })),
   setSpreadingParam: (key, value) => set((s) => ({ spreading: { ...s.spreading, [key]: value } })),
@@ -115,4 +126,6 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
       spreadingCompare: spreadingView3d ? false : s.spreadingCompare,
     })),
   setInterfaceView3d: (interfaceView3d) => set({ interfaceView3d }),
+  setVelocityParam: (key, value) => set((s) => ({ velocity: { ...s.velocity, [key]: value } })),
+  setVelocityView: (velocityView) => set({ velocityView }),
 }));
