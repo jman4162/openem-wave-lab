@@ -27,23 +27,34 @@ export function TimeControls() {
   );
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '8px 16px',
-        borderTop: '1px solid #ddd',
-        fontSize: 14,
-      }}
-    >
-      <button onClick={() => setPlaying(!playing)} style={{ width: 64 }}>
+    <div className="time-controls">
+      <button
+        onClick={() => setPlaying(!playing)}
+        style={{ width: 64 }}
+        aria-label={playing ? 'Pause animation' : 'Play animation'}
+      >
         {playing ? 'Pause' : 'Play'}
       </button>
-      <button onClick={() => stepPhaseDeg(-90)}>−90°</button>
-      <button onClick={() => stepPhaseDeg(-15)}>−15°</button>
-      <button onClick={() => stepPhaseDeg(15)}>+15°</button>
-      <button onClick={() => stepPhaseDeg(90)}>+90°</button>
+      <button onClick={() => stepPhaseDeg(-90)} aria-label="Step phase back 90 degrees">
+        −90°
+      </button>
+      <button
+        onClick={() => stepPhaseDeg(-15)}
+        className="hide-narrow"
+        aria-label="Step phase back 15 degrees"
+      >
+        −15°
+      </button>
+      <button
+        onClick={() => stepPhaseDeg(15)}
+        className="hide-narrow"
+        aria-label="Step phase forward 15 degrees"
+      >
+        +15°
+      </button>
+      <button onClick={() => stepPhaseDeg(90)} aria-label="Step phase forward 90 degrees">
+        +90°
+      </button>
       <input
         ref={sliderRef}
         type="range"
@@ -51,19 +62,23 @@ export function TimeControls() {
         max={2}
         step={0.005}
         defaultValue={0}
-        style={{ flex: 1 }}
+        style={{ flex: 1, minWidth: 60 }}
         onInput={(e) => {
           setPlaying(false);
           setTau(parseFloat(e.currentTarget.value));
         }}
         aria-label="Scrub time over two periods"
       />
-      <span ref={labelRef} style={{ fontFamily: 'monospace', minWidth: 90 }}>
+      <span ref={labelRef} style={{ fontFamily: 'monospace', minWidth: 80 }}>
         t/T = 0.00
       </span>
-      <label>
+      <label className="hide-narrow">
         speed{' '}
-        <select value={speed} onChange={(e) => setSpeed(parseFloat(e.target.value))}>
+        <select
+          value={speed}
+          onChange={(e) => setSpeed(parseFloat(e.target.value))}
+          aria-label="Playback speed in periods per second"
+        >
           {SPEEDS.map((s) => (
             <option key={s} value={s}>
               {s} T/s

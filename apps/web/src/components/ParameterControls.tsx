@@ -58,6 +58,7 @@ export function ParameterControls({
               max={sliderMax}
               step={(sliderMax - sliderMin) / 200}
               value={sliderValue}
+              aria-label={def.label}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value);
                 onChange(def.key, isLog ? 10 ** raw : raw);

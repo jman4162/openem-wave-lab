@@ -20,13 +20,13 @@ import {
 } from '@openem/physics-core';
 import { useWaveLabStore } from '../../state/store';
 import { HeatmapLayer } from '../heatmapLayer';
+import { smallViewport } from '../quality';
 import type { SceneController } from '../../modules/types';
 
 /** Physical domain in medium-1 wavelengths: x in [-2, 2], z in [-2.5, 1.5]. */
 const X_SPAN = 4;
 const Z_MIN = -2.5;
 const Z_MAX = 1.5;
-const GRID = 224;
 const QUAD = 2.4;
 /** Scene units per medium-1 wavelength. */
 const UNIT = QUAD / X_SPAN;
@@ -56,15 +56,19 @@ export class InterfaceScene implements SceneController {
   private kArrows: { incident: ArrowHelper; reflected: ArrowHelper; transmitted: ArrowHelper };
   private sArrows: ArrowHelper[] = [];
   private lastParams: PlanarInterfaceState | null = null;
-  private gridPointsBuf = new Float32Array(3 * GRID * GRID);
-  private scalarBuf = new Float32Array(2 * GRID * GRID);
+  /** Quality tier chosen once at construction (docs/architecture.md). */
+  private readonly grid = smallViewport() ? 160 : 224;
+  private gridPointsBuf: Float32Array;
+  private scalarBuf: Float32Array;
   private aspect = 1.6;
 
   constructor(_renderer: WebGPURenderer, _canvas: HTMLCanvasElement) {
     this.camera.position.set(0, 0, 5);
     this.scene.add(this.group);
 
-    this.layer = new HeatmapLayer(this.group, GRID, QUAD, QUAD);
+    this.gridPointsBuf = new Float32Array(3 * this.grid * this.grid);
+    this.scalarBuf = new Float32Array(2 * this.grid * this.grid);
+    this.layer = new HeatmapLayer(this.group, this.grid, QUAD, QUAD);
 
     // Interface line at z = 0.
     const line = new Mesh(
@@ -126,18 +130,19 @@ export class InterfaceScene implements SceneController {
     const lambda = derived.wavelength1M;
 
     // Heatmap phasors: sample the full field grid once.
-    for (let iz = 0; iz < GRID; iz++) {
-      const z = (Z_MIN + ((Z_MAX - Z_MIN) * iz) / (GRID - 1)) * lambda;
-      for (let ix = 0; ix < GRID; ix++) {
-        const i = iz * GRID + ix;
-        this.gridPointsBuf[3 * i] = (-X_SPAN / 2 + (X_SPAN * ix) / (GRID - 1)) * lambda;
+    const n = this.grid;
+    for (let iz = 0; iz < n; iz++) {
+      const z = (Z_MIN + ((Z_MAX - Z_MIN) * iz) / (n - 1)) * lambda;
+      for (let ix = 0; ix < n; ix++) {
+        const i = iz * n + ix;
+        this.gridPointsBuf[3 * i] = (-X_SPAN / 2 + (X_SPAN * ix) / (n - 1)) * lambda;
         this.gridPointsBuf[3 * i + 1] = 0;
         this.gridPointsBuf[3 * i + 2] = z;
       }
     }
     const sample = planarInterfaceModel.sampleField(params, this.gridPointsBuf, 0);
     const source = params.polarization === 'TE' ? sample.Ephasor : sample.Hphasor;
-    for (let i = 0; i < GRID * GRID; i++) {
+    for (let i = 0; i < n * n; i++) {
       this.scalarBuf[2 * i] = source[6 * i + 2] ?? 0;
       this.scalarBuf[2 * i + 1] = source[6 * i + 3] ?? 0;
     }

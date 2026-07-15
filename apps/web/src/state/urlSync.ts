@@ -25,6 +25,12 @@ export const snapshotOf = (s: WaveLabState): SceneSnapshot => ({
  */
 export function initUrlSync(): void {
   const initial = decodeScene(window.location.search);
+  // Accessibility: honor prefers-reduced-motion unless the link explicitly
+  // encodes a play state; the user can still press Play.
+  const hasExplicitPlayState = new URLSearchParams(window.location.search).has('pl');
+  if (!hasExplicitPlayState && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    initial.playing = false;
+  }
   useWaveLabStore.setState(initial);
 
   let timer: ReturnType<typeof setTimeout> | undefined;

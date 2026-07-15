@@ -16,12 +16,12 @@ import {
 } from '@openem/physics-core';
 import { useWaveLabStore, type SpreadingViewKind } from '../../state/store';
 import { HeatmapLayer } from '../heatmapLayer';
+import { smallViewport } from '../quality';
 import type { SceneController } from '../../modules/types';
 
 /** Physical domain shown: [-4λ, 4λ] in both axes. */
 const DOMAIN_WAVELENGTHS = 8;
-const SINGLE_GRID = 256;
-const COMPARE_GRID = 176;
+
 const SINGLE_SIZE = 2.4;
 const COMPARE_SIZE = 1.1;
 const COMPARE_GAP = 0.12;
@@ -70,6 +70,9 @@ export class SpreadingScene implements SceneController {
 
   private single: QuadGroup;
   private compare: QuadGroup[];
+  /** Quality tier chosen once at construction (docs/architecture.md). */
+  private readonly singleGrid = smallViewport() ? 160 : 256;
+  private readonly compareGrid = smallViewport() ? 128 : 176;
   private lastParams: SpreadingState | null = null;
   private lastKind: SpreadingViewKind | null = null;
   private lastCompare: boolean | null = null;
@@ -79,9 +82,9 @@ export class SpreadingScene implements SceneController {
   constructor(_renderer: WebGPURenderer, _canvas: HTMLCanvasElement) {
     this.camera.position.set(0, 0, 5);
 
-    this.single = this.makeQuad(SINGLE_GRID, SINGLE_SIZE, 'cylindrical', 0);
+    this.single = this.makeQuad(this.singleGrid, SINGLE_SIZE, 'cylindrical', 0);
     this.compare = KINDS.map((kind, i) =>
-      this.makeQuad(COMPARE_GRID, COMPARE_SIZE, kind, (i - 1) * (COMPARE_SIZE + COMPARE_GAP)),
+      this.makeQuad(this.compareGrid, COMPARE_SIZE, kind, (i - 1) * (COMPARE_SIZE + COMPARE_GAP)),
     );
   }
 
@@ -159,10 +162,14 @@ export class SpreadingScene implements SceneController {
       const spanM = DOMAIN_WAVELENGTHS * derived.wavelengthM;
       const norm = spreading.amplitude;
       if (spreadingCompare) {
-        const sample = spreadingModel.sampleField(spreading, gridPoints(COMPARE_GRID, spanM), 0);
+        const sample = spreadingModel.sampleField(
+          spreading,
+          gridPoints(this.compareGrid, spanM),
+          0,
+        );
         for (const q of this.compare) q.layer.setPhasors(sampleFor(sample, q.kind), norm);
       } else {
-        const sample = spreadingModel.sampleField(spreading, gridPoints(SINGLE_GRID, spanM), 0);
+        const sample = spreadingModel.sampleField(spreading, gridPoints(this.singleGrid, spanM), 0);
         this.single.layer.setPhasors(sampleFor(sample, this.single.kind), norm);
       }
       this.lastParams = spreading;
