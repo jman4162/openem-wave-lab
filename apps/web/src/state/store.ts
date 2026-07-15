@@ -42,6 +42,9 @@ export interface WaveLabState {
   spreadingEnvelope: boolean;
   /** Log-log radial plots. */
   spreadingLogPlot: boolean;
+  /** 3D height-field surface instead of the 2D heatmap (single view only). */
+  spreadingView3d: boolean;
+  interfaceView3d: boolean;
   setScene: (scene: SceneId) => void;
   setPlaneWaveParam: (key: keyof PlaneWaveState, value: number) => void;
   setSpreadingParam: (key: keyof SpreadingState, value: number) => void;
@@ -61,6 +64,8 @@ export interface WaveLabState {
   setSpreadingCompare: (compare: boolean) => void;
   setSpreadingEnvelope: (envelope: boolean) => void;
   setSpreadingLogPlot: (log: boolean) => void;
+  setSpreadingView3d: (view3d: boolean) => void;
+  setInterfaceView3d: (view3d: boolean) => void;
 }
 
 export const useWaveLabStore = create<WaveLabState>((set) => ({
@@ -79,6 +84,8 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   spreadingCompare: true,
   spreadingEnvelope: false,
   spreadingLogPlot: false,
+  spreadingView3d: false,
+  interfaceView3d: false,
   setScene: (scene) => set({ scene }),
   setPlaneWaveParam: (key, value) => set((s) => ({ planeWave: { ...s.planeWave, [key]: value } })),
   setSpreadingParam: (key, value) => set((s) => ({ spreading: { ...s.spreading, [key]: value } })),
@@ -93,7 +100,19 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   setProbeX: (probeX) => set({ probeX }),
   setProbeZ: (probeZ) => set({ probeZ }),
   setSpreadingKind: (spreadingKind) => set({ spreadingKind }),
-  setSpreadingCompare: (spreadingCompare) => set({ spreadingCompare }),
+  setSpreadingCompare: (spreadingCompare) =>
+    set((s) => ({
+      spreadingCompare,
+      spreadingView3d: spreadingCompare ? false : s.spreadingView3d,
+    })),
   setSpreadingEnvelope: (spreadingEnvelope) => set({ spreadingEnvelope }),
   setSpreadingLogPlot: (spreadingLogPlot) => set({ spreadingLogPlot }),
+  // 3D surface and compare are mutually exclusive, enforced in both directions
+  // so the URL never encodes an impossible combination.
+  setSpreadingView3d: (spreadingView3d) =>
+    set((s) => ({
+      spreadingView3d,
+      spreadingCompare: spreadingView3d ? false : s.spreadingCompare,
+    })),
+  setInterfaceView3d: (interfaceView3d) => set({ interfaceView3d }),
 }));

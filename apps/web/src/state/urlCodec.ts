@@ -33,6 +33,8 @@ export interface SceneSnapshot {
   spreadingCompare: boolean;
   spreadingEnvelope: boolean;
   spreadingLogPlot: boolean;
+  spreadingView3d: boolean;
+  interfaceView3d: boolean;
 }
 
 export const defaultSceneSnapshot: SceneSnapshot = {
@@ -51,6 +53,8 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   spreadingCompare: true,
   spreadingEnvelope: false,
   spreadingLogPlot: false,
+  spreadingView3d: false,
+  interfaceView3d: false,
 };
 
 /** Compact, round-trip-stable number encoding. */

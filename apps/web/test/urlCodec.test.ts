@@ -49,6 +49,24 @@ describe('URL codec', () => {
     expect(decodeScene('v=1&scene=spreading&wk=hexagonal').spreadingKind).toBe('cylindrical');
   });
 
+  it('3D surface flag round-trips (spreading and interface)', () => {
+    const spreading3d: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'spreading',
+      spreadingCompare: false,
+      spreadingView3d: true,
+      spreadingKind: 'spherical',
+    };
+    expect(decodeScene(encodeScene(spreading3d))).toEqual(spreading3d);
+
+    const interface3d: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'planar-interface',
+      interfaceView3d: true,
+    };
+    expect(decodeScene(encodeScene(interface3d)).interfaceView3d).toBe(true);
+  });
+
   it('encode then decode is the identity (planar interface, incl. discrete params)', () => {
     const snapshot: SceneSnapshot = {
       ...defaultSceneSnapshot,

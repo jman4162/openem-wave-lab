@@ -34,7 +34,12 @@ export interface ModuleManifest {
   }[];
   extraBools?: {
     short: string;
-    storeKey: 'spreadingCompare' | 'spreadingEnvelope' | 'spreadingLogPlot';
+    storeKey:
+      | 'spreadingCompare'
+      | 'spreadingEnvelope'
+      | 'spreadingLogPlot'
+      | 'spreadingView3d'
+      | 'interfaceView3d';
   }[];
   extraEnums?: { short: string; storeKey: 'spreadingKind'; values: readonly string[] }[];
 }
@@ -72,6 +77,7 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
       { short: 'cmp', storeKey: 'spreadingCompare' },
       { short: 'env', storeKey: 'spreadingEnvelope' },
       { short: 'logp', storeKey: 'spreadingLogPlot' },
+      { short: 's3d', storeKey: 'spreadingView3d' },
     ],
     extraEnums: [
       { short: 'wk', storeKey: 'spreadingKind', values: ['plane', 'cylindrical', 'spherical'] },
@@ -94,6 +100,7 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
     },
     sliceEnums: [{ short: 'pol', key: 'polarization', values: ['TE', 'TM'] }],
     sliceBools: [{ short: 'pec', key: 'pec' }],
+    extraBools: [{ short: 'i3d', storeKey: 'interfaceView3d' }],
     extraNums: [
       { short: 'px', storeKey: 'probeX', min: -2, max: 2 },
       { short: 'pz', storeKey: 'probeZ', min: -2.5, max: 1.5 },

@@ -16,6 +16,7 @@ export function SpreadingSidebar() {
   const compare = useWaveLabStore((s) => s.spreadingCompare);
   const envelope = useWaveLabStore((s) => s.spreadingEnvelope);
   const logPlot = useWaveLabStore((s) => s.spreadingLogPlot);
+  const view3d = useWaveLabStore((s) => s.spreadingView3d);
   const store = useWaveLabStore.getState();
 
   const derived = deriveSpreading(params);
@@ -64,6 +65,14 @@ export function SpreadingSidebar() {
           onChange={(e) => store.setSpreadingCompare(e.target.checked)}
         />{' '}
         Compare all three (plane | cylindrical | spherical)
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={view3d}
+          onChange={(e) => store.setSpreadingView3d(e.target.checked)}
+        />{' '}
+        3D surface (orbit with drag / pinch) — single wave only
       </label>
       {!compare && (
         <div style={{ display: 'flex', gap: 8 }}>

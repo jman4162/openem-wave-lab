@@ -17,6 +17,8 @@ export const snapshotOf = (s: WaveLabState): SceneSnapshot => ({
   spreadingCompare: s.spreadingCompare,
   spreadingEnvelope: s.spreadingEnvelope,
   spreadingLogPlot: s.spreadingLogPlot,
+  spreadingView3d: s.spreadingView3d,
+  interfaceView3d: s.interfaceView3d,
 });
 
 /**
