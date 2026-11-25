@@ -1,5 +1,5 @@
 import { EPSILON_0, MU_0 } from '../constants';
-import { cabs, cadd, cdiv, cexp, cmul, complex, cscale, csub } from '../math/complex';
+import { cabs, cadd, cdiv, complex, cscale, csub } from '../math/complex';
 import { cnormSq } from '../math/vec3';
 import type { Observable, PhysicsModel, ValidationResult } from '../model';
 import { timeAveragedPoynting } from '../plane-wave/model';
@@ -89,58 +89,50 @@ export const layeredSlabModel: PhysicsModel<LayeredSlabState, SlabSample, SlabDe
 
   validate(state) {
     const derived = deriveLayeredSlab(state);
-    const { kz1, kz2, kz3, r, t, A, B, R, T, thicknessM } = derived;
+    const { kz1, kz2, kz3, r, R, T, thicknessM } = derived;
     const results: ValidationResult[] = [];
     const push = (id: string, description: string, residual: number, tolerance: number): void => {
       results.push({ id, description, residual, tolerance, pass: residual <= tolerance });
     };
 
-    // The four coefficient identities ARE the boundary conditions at both faces.
+    // Boundary conditions from the fields themselves, evaluated just either side
+    // of each face: the continuous scalar (Ey or Hy) and the other tangential
+    // field (Hx for TE, Ex for TM). This exercises the same code the renderer uses.
     const isTE = state.polarization === 'TE';
-    const q1 = complex(isTE ? kz1 : kz1 / state.eps1R);
-    const q2 = isTE ? kz2 : cscale(kz2, 1 / state.eps2R);
-    const q3 = isTE ? kz3 : cscale(kz3, 1 / state.eps3R);
-    const phase = cexp(complex(-kz2.im * thicknessM, kz2.re * thicknessM)); // e^{i kz2 d}
-    const fwdD = cmul(A, phase);
-    const bwdD = cdiv(B, phase);
-    const rel = (a: number, scale: number): number => a / Math.max(scale, 1e-300);
-
-    const lhs0 = cadd(complex(1), r);
-    push(
-      'continuity-scalar-z0',
-      'z = 0: continuous scalar (Ey or Hy), 1 + r = A + B',
-      rel(cabs(csub(lhs0, cadd(A, B))), 1 + cabs(r)),
-      1e-12,
-    );
-    const flux0 = cmul(q1, csub(complex(1), r));
-    push(
-      'continuity-derivative-z0',
-      isTE
-        ? 'z = 0: tangential H continuous, kz1(1 - r) = kz2(A - B)'
-        : 'z = 0: tangential E continuous, kz1(1 - r)/eps1 = kz2(A - B)/eps2',
-      rel(cabs(csub(flux0, cmul(q2, csub(A, B)))), cabs(flux0) + cabs(q1)),
-      1e-12,
-    );
-    push(
-      'continuity-scalar-zd',
-      'z = d: continuous scalar, A e^{i kz2 d} + B e^{-i kz2 d} = t',
-      rel(cabs(csub(cadd(fwdD, bwdD), t)), cabs(fwdD) + cabs(bwdD) + cabs(t)),
-      1e-12,
-    );
-    push(
-      'continuity-derivative-zd',
-      'z = d: derivative condition, q2(A e^{i kz2 d} - B e^{-i kz2 d}) = q3 t',
-      rel(
-        cabs(csub(cmul(q2, csub(fwdD, bwdD)), cmul(q3, t))),
-        cabs(q2) * (cabs(fwdD) + cabs(bwdD)) + cabs(q3) * cabs(t),
-      ),
-      1e-12,
-    );
+    const inc0 = slabIncidentFieldsAt(state, derived, 0, -1e-9);
+    const scalarScale = isTE ? cabs(inc0.Ephasor.y) : cabs(inc0.Hphasor.y);
+    const tangentScale = Math.max(isTE ? cabs(inc0.Hphasor.x) : cabs(inc0.Ephasor.x), 1e-300);
+    const gap = 1e-12 * derived.wavelength1M;
+    for (const [label, zFace] of [
+      ['z0', 0],
+      ['zd', thicknessM],
+    ] as const) {
+      const below = slabFieldsAt(state, derived, 0.3 * derived.wavelength1M, zFace - gap, 0);
+      const above = slabFieldsAt(state, derived, 0.3 * derived.wavelength1M, zFace + gap, 0);
+      const dScalar = isTE
+        ? csub(below.Ephasor.y, above.Ephasor.y)
+        : csub(below.Hphasor.y, above.Hphasor.y);
+      const dTangent = isTE
+        ? csub(below.Hphasor.x, above.Hphasor.x)
+        : csub(below.Ephasor.x, above.Ephasor.x);
+      const where = label === 'z0' ? 'z = 0' : 'z = d';
+      push(
+        `continuity-scalar-${label}`,
+        `${where}: ${isTE ? 'Ey' : 'Hy'} continuous`,
+        cabs(dScalar) / scalarScale,
+        1e-9,
+      );
+      push(
+        `continuity-tangential-${label}`,
+        `${where}: ${isTE ? 'Hx' : 'Ex'} continuous`,
+        cabs(dTangent) / tangentScale,
+        1e-9,
+      );
+    }
 
     // Power balance from E x H: incident flux, flux through the slab middle,
     // and flux leaving the far face. Lossless media conserve all three.
-    const inc = slabIncidentFieldsAt(state, derived, 0, -1e-9);
-    const SzInc = timeAveragedPoynting(inc.Ephasor, inc.Hphasor).z;
+    const SzInc = timeAveragedPoynting(inc0.Ephasor, inc0.Hphasor).z;
     if (SzInc > 0) {
       const beyond = slabFieldsAt(state, derived, 0, thicknessM * (1 + 1e-12) + 1e-30, 0);
       const SzOut = timeAveragedPoynting(beyond.Ephasor, beyond.Hphasor).z / SzInc;
@@ -166,7 +158,9 @@ export const layeredSlabModel: PhysicsModel<LayeredSlabState, SlabSample, SlabDe
       );
     }
 
-    // Thin-slab limit: the Airy sum at d = 0 must be the single 1 -> 3 interface.
+    // Thin-slab limit: d = 0 must reproduce the single 1 -> 3 interface.
+    const q1 = complex(isTE ? kz1 : kz1 / state.eps1R);
+    const q3 = isTE ? kz3 : cscale(kz3, 1 / state.eps3R);
     const r13 = cdiv(csub(q1, q3), cadd(q1, q3));
     const rZero = deriveLayeredSlab({ ...state, thicknessLambda1: 0 }).r;
     push(

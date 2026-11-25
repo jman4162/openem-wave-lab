@@ -191,7 +191,7 @@ describe('limits and closed forms', () => {
   it('symmetric propagating slab: R = 0 at half-wave steps and the peak follows Airy', () => {
     const over = { eps1R: 4, eps2R: 8, eps3R: 4, thetaDeg: 60 };
     const d0 = derive(over);
-    const step = d0.halfWaveStepLambda1 as number;
+    const step = d0.reflectancePeriodLambda1 as number;
     expect(derive({ ...over, thicknessLambda1: step }).R).toBeLessThan(1e-26);
     expect(derive({ ...over, thicknessLambda1: 2 * step }).R).toBeLessThan(1e-26);
     const peak = derive({ ...over, thicknessLambda1: step / 2 }).R;
@@ -221,10 +221,62 @@ describe('Virginia Tech ECE 5105 exam problem (omega = 3e11 rad/s, theta = 60 de
     expect(exam(1, 3e-3).T).toBeLessThan(0.001);
   });
 
-  it('Case B (eps2 = 8 eps0): minimum T is 5/9 (Airy peak R = 4/9 for this geometry)', () => {
-    const d = exam(8, 1e-3);
-    // r12 = (kz1 - kz2)/(kz1 + kz2) with kz1 = k0, kz2 = k0 sqrt(5): R_max = 4/9 exactly.
-    expect(d.airyMaxReflectance as number).toBeCloseTo(4 / 9, 12);
+  it('Case B (eps2 = 8 eps0): over 0-10 mm, max R = 4/9 and min T = 5/9 from the full solution', () => {
+    // r12 = (kz1 - kz2)/(kz1 + kz2) with kz1 = k0, kz2 = k0 sqrt(5) gives R_max = 4/9 exactly.
+    expect(exam(8, 1e-3).airyMaxReflectance as number).toBeCloseTo(4 / 9, 12);
+    let maxR = 0;
+    let minT = 1;
+    for (let i = 0; i <= 20000; i++) {
+      const d = exam(8, (10e-3 * i) / 20000);
+      maxR = Math.max(maxR, d.R);
+      minT = Math.min(minT, d.T);
+    }
+    expect(maxR).toBeCloseTo(4 / 9, 6);
+    expect(minT).toBeCloseTo(5 / 9, 6);
+  });
+});
+
+describe('the slab critical angle (kz2 -> 0)', () => {
+  // eps 4 | 1 | 4 at 30 deg puts the slab exactly at its critical angle; the
+  // TM case 12 | 9 | 1.7 at 60 deg does the same with TIR at the exit face.
+  const critical: Partial<LayeredSlabState>[] = [
+    { eps1R: 4, eps2R: 1, eps3R: 4, thetaDeg: 30, thicknessLambda1: 1 },
+    { eps1R: 4, eps2R: 1, eps3R: 4, thetaDeg: 30, thicknessLambda1: 0.05 },
+    { eps1R: 12, eps2R: 9, eps3R: 1.7, thetaDeg: 60, polarization: 'TM', thicknessLambda1: 0.6 },
+    { eps1R: 8.6, eps2R: 4.3, eps3R: 2, thetaDeg: 45, thicknessLambda1: 0 },
+  ];
+
+  it('runtime validation passes at and around the critical angle', () => {
+    for (const c of critical) {
+      for (const dTheta of [-1e-3, -1e-7, 0, 1e-7, 1e-3]) {
+        const s = { ...base, ...c, thetaDeg: (c.thetaDeg as number) + dTheta };
+        const failed = layeredSlabModel.validate(s).filter((v) => !v.pass);
+        expect(failed, JSON.stringify({ s, failed })).toEqual([]);
+      }
+    }
+  });
+
+  it('R(theta) is continuous across the critical angle', () => {
+    const at = (thetaDeg: number) =>
+      derive({ eps1R: 4, eps2R: 1, eps3R: 4, thicknessLambda1: 1, thetaDeg }).R;
+    expect(Math.abs(at(30 - 1e-6) - at(30))).toBeLessThan(1e-5);
+    expect(Math.abs(at(30 + 1e-6) - at(30))).toBeLessThan(1e-5);
+  });
+
+  it('the near-critical (cos/sinc) and Airy forms agree where both are well conditioned', () => {
+    // |kz2| d just below and just above the 0.01 switch: r must not jump.
+    const s = { ...base, eps1R: 4, eps2R: 1, eps3R: 4, thicknessLambda1: 0.5 };
+    const thetaFor = (kz2d: number) => {
+      const d = deriveLayeredSlab(s);
+      const kz2 = kz2d / d.thicknessM;
+      // kz2^2 = k0^2 - kx^2 (propagating side) -> sin(theta) = sqrt(k0^2 - kz2^2)/k1
+      return (Math.asin(Math.sqrt(d.k0 ** 2 - kz2 ** 2) / d.k1) * 180) / Math.PI;
+    };
+    const below = deriveLayeredSlab({ ...s, thetaDeg: thetaFor(0.0099999) });
+    const above = deriveLayeredSlab({ ...s, thetaDeg: thetaFor(0.0100001) });
+    expect(below.nearCritical).toBe(true);
+    expect(above.nearCritical).toBe(false);
+    expect(cabs({ re: below.r.re - above.r.re, im: below.r.im - above.r.im })).toBeLessThan(1e-6);
   });
 });
 

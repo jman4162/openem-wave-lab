@@ -1,7 +1,7 @@
 import { EPSILON_0, MU_0 } from '../constants';
 import { cadd, cdiv, cexp, cmul, complex, cscale, csub, expi, type Complex } from '../math/complex';
 import type { ComplexVec3, Vec3 } from '../math/vec3';
-import type { SlabDerived } from './derive';
+import { slabCosSinc, type SlabDerived } from './derive';
 import type { LayeredSlabState } from './state';
 
 export interface SlabFieldsAtPoint {
@@ -24,7 +24,8 @@ const propagate = (k: Complex, z: number): Complex => cexp(complex(-k.im * z, k.
  * continuous scalar psi (Ey for TE, Hy/H0 for TM, H0 = E0/eta1):
  *
  *   z < 0:      psi = e^{ikx x}(e^{i kz1 z} + r e^{-i kz1 z})
- *   0 <= z <= d: psi = e^{ikx x}(A e^{i kz2 z} + B e^{-i kz2 z})
+ *   0 <= z <= d: psi = e^{ikx x}(A e^{i kz2 z} + B e^{-i kz2 z}), or near the
+ *                slab's critical angle psi = e^{ikx x}(psi0 cos(kz2 z) + p2 u0 sin(kz2 z)/kz2)
  *   z > d:      psi = e^{ikx x} t e^{i kz3 (z - d)}
  *
  * The other components follow from the curl equations exactly as in the
@@ -50,10 +51,18 @@ export function slabFieldsAt(
     dzPsi = cmul(xPhase, cmul(complex(0, kz1), csub(up, cmul(r, down))));
     epsR = state.eps1R;
   } else if (z <= thicknessM) {
-    const fwd = cmul(A, propagate(kz2, z));
-    const bwd = cmul(B, propagate(cscale(kz2, -1), z));
-    psi = cmul(xPhase, cadd(fwd, bwd));
-    dzPsi = cmul(xPhase, cmul(cmul(complex(0, 1), kz2), csub(fwd, bwd)));
+    if (derived.nearCritical) {
+      // cos/sinc basis, regular at kz2 = 0: psi = psi0 c(z) + p2 u0 S(z).
+      const [c, S] = slabCosSinc(derived.kz2Squared, z);
+      const { psi0, u0, p2, kz2Squared } = derived;
+      psi = cmul(xPhase, cadd(cscale(psi0, c), cscale(u0, p2 * S)));
+      dzPsi = cmul(xPhase, cadd(cscale(psi0, -kz2Squared * S), cscale(u0, p2 * c)));
+    } else {
+      const fwd = cmul(A, propagate(kz2, z));
+      const bwd = cmul(B, propagate(cscale(kz2, -1), z));
+      psi = cmul(xPhase, cadd(fwd, bwd));
+      dzPsi = cmul(xPhase, cmul(cmul(complex(0, 1), kz2), csub(fwd, bwd)));
+    }
     epsR = state.eps2R;
   } else {
     psi = cmul(xPhase, cmul(tc, propagate(kz3, z - thicknessM)));

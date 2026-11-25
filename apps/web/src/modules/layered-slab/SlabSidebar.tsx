@@ -50,8 +50,13 @@ export function SlabSidebar() {
       {derived.slabDecayLengthM !== null && (
         <Row label="slab decay length 1/κ" value={formatSI(derived.slabDecayLengthM, 'm')} />
       )}
-      {derived.halfWaveStepLambda1 !== null && (
-        <Row label="R = 0 spacing π/k_z2" value={`${derived.halfWaveStepLambda1.toFixed(4)} λ₁`} />
+      {derived.reflectancePeriodLambda1 !== null && (
+        <Row
+          label={
+            derived.airyMaxReflectance !== null ? 'R = 0 spacing π/k_z2' : 'R(d) period π/k_z2'
+          }
+          value={`${derived.reflectancePeriodLambda1.toFixed(4)} λ₁`}
+        />
       )}
       {derived.airyMaxReflectance !== null && (
         <Row label="Airy peak R" value={derived.airyMaxReflectance.toFixed(4)} />
@@ -61,11 +66,13 @@ export function SlabSidebar() {
       <LinePlot series={series} xLabel="d / λ₁" yLabel="power" markerX={params.thicknessLambda1} />
       <p style={{ margin: 0, color: '#777' }}>
         Red: R · blue: T · dashed line: current thickness.
-        {derived.slabRegime === 'evanescent' &&
+        {derived.exitRegime === 'evanescent' &&
+          ' Medium 3 is beyond its critical angle, so T = 0 and R = 1 for every thickness.'}
+        {derived.exitRegime === 'propagating' &&
+          derived.slabRegime === 'evanescent' &&
           ' The slab is beyond its critical angle, so T falls off as exp(−2κd): power tunnels across.'}
-        {derived.slabRegime === 'propagating' &&
-          derived.exitRegime === 'propagating' &&
-          ' Multiple reflections interfere; R returns to its minimum every π/k_z2 of thickness.'}
+        {derived.reflectancePeriodLambda1 !== null &&
+          ' Multiple reflections interfere, so R(d) repeats every π/k_z2 of thickness.'}
       </p>
     </section>
   );
@@ -89,7 +96,7 @@ export function SlabDiscreteControls() {
     },
     {
       label: 'Fabry–Pérot',
-      // Quarter of the R = 0 spacing 1/sqrt(5) lambda_1: the Airy reflectance peak, R = 4/9.
+      // Half of the R = 0 spacing 1/sqrt(5) lambda_1: the Airy reflectance peak, R = 4/9.
       values: {
         eps1R: 4,
         eps2R: 8,

@@ -9,13 +9,7 @@ import {
   Vector3,
   type WebGPURenderer,
 } from 'three/webgpu';
-import {
-  deriveLayeredSlab,
-  layeredSlabModel,
-  slabFieldsAt,
-  timeAveragedPoynting,
-  type LayeredSlabState,
-} from '@openem/physics-core';
+import { deriveLayeredSlab, layeredSlabModel, type LayeredSlabState } from '@openem/physics-core';
 import { useWaveLabStore } from '../../state/store';
 import { HeatmapLayer } from '../heatmapLayer';
 import { smallViewport } from '../quality';
@@ -31,6 +25,8 @@ const UNIT = QUAD / X_SPAN;
 
 const S_ARROWS_X = 7;
 const S_ARROWS_Z = 8;
+/** Rows of <S> arrows: a fixed grid plus one row at the slab's mid-plane. */
+const S_ROWS = S_ARROWS_Z + 1;
 
 const toSceneX = (xOverLambda: number): number => xOverLambda * UNIT;
 const toSceneY = (zOverLambda: number): number => (zOverLambda - (Z_MIN + Z_MAX) / 2) * UNIT;
@@ -97,7 +93,7 @@ export class SlabScene implements SceneController {
       transmitted: mkArrow(0xf59e0b),
     };
 
-    for (let i = 0; i < S_ARROWS_X * S_ARROWS_Z; i++) {
+    for (let i = 0; i < S_ARROWS_X * S_ROWS; i++) {
       const arrow = new ArrowHelper(
         new Vector3(0, 1, 0),
         new Vector3(),
@@ -176,7 +172,7 @@ export class SlabScene implements SceneController {
       if (this.kArrows.slab.visible) {
         this.kArrows.slab.setLength(slabLength, 0.1, 0.055);
       }
-      exitX = Math.min(X_SPAN / 2 - 0.4, (dL * derived.kx) / derived.kz2.re);
+      exitX = Math.min(X_SPAN / 2 - 0.4, derived.rayExitOffsetM / lambda);
     }
     const transmits = derived.exitRegime === 'propagating' && dL < Z_MAX - 0.4;
     this.kArrows.transmitted.visible = transmits;
@@ -186,15 +182,24 @@ export class SlabScene implements SceneController {
       this.kArrows.transmitted.setLength(0.45, 0.1, 0.055);
     }
 
-    // <S> arrows from the fields on a coarse grid (time-independent).
+    // <S> arrows from the model's observables on a coarse grid (time-independent),
+    // plus a row at the slab mid-plane so the flux inside a thin slab is visible.
     const sValues: { x: number; y: number; sx: number; sz: number; mag: number }[] = [];
     let maxMag = 0;
-    for (let iz = 0; iz < S_ARROWS_Z; iz++) {
-      const zL = Z_MIN + 0.3 + ((Z_MAX - Z_MIN - 0.6) * iz) / (S_ARROWS_Z - 1);
+    for (let iz = 0; iz < S_ROWS; iz++) {
+      const inSlabRow = iz === S_ARROWS_Z;
+      const zL = inSlabRow ? dL / 2 : Z_MIN + 0.3 + ((Z_MAX - Z_MIN - 0.6) * iz) / (S_ARROWS_Z - 1);
       for (let ix = 0; ix < S_ARROWS_X; ix++) {
-        const xL = -X_SPAN / 2 + 0.35 + ((X_SPAN - 0.7) * ix) / (S_ARROWS_X - 1);
-        const f = slabFieldsAt(params, derived, xL * lambda, zL * lambda, 0);
-        const S = timeAveragedPoynting(f.Ephasor, f.Hphasor);
+        // The slab row is offset by half a column so its arrows don't line up with the grid's.
+        const col = ix + (inSlabRow ? 0.5 : 0);
+        const xL = -X_SPAN / 2 + 0.35 + ((X_SPAN - 0.7) * col) / (S_ARROWS_X - 1);
+        if (inSlabRow && (dL < 0.04 || dL > Z_MAX)) {
+          sValues.push({ x: 0, y: 0, sx: 0, sz: 0, mag: 0 });
+          continue;
+        }
+        const point = { x: xL * lambda, y: 0, z: zL * lambda };
+        const sObs = layeredSlabModel.observables(params, point).find((o) => o.id === 'S-avg');
+        const S = sObs?.kind === 'vec3' ? sObs.value : { x: 0, y: 0, z: 0 };
         const mag = Math.hypot(S.x, S.z);
         maxMag = Math.max(maxMag, mag);
         sValues.push({ x: toSceneX(xL), y: toSceneY(zL), sx: S.x, sz: S.z, mag });
