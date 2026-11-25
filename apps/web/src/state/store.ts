@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import {
+  defaultLayeredSlabState,
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
   defaultStandingWaveState,
   defaultVelocityState,
+  type LayeredSlabState,
   type PlanarInterfaceState,
   type StandingWaveState,
   type PlaneWaveState,
@@ -13,7 +15,12 @@ import {
 } from '@openem/physics-core';
 
 export type SceneId =
-  'plane-wave' | 'spreading' | 'planar-interface' | 'velocities' | 'standing-waves';
+  | 'plane-wave'
+  | 'spreading'
+  | 'planar-interface'
+  | 'layered-slab'
+  | 'velocities'
+  | 'standing-waves';
 
 export type SpreadingViewKind = 'plane' | 'cylindrical' | 'spherical';
 
@@ -29,6 +36,7 @@ export interface WaveLabState {
   planeWave: PlaneWaveState;
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
+  layeredSlab: LayeredSlabState;
   velocity: VelocityState;
   standingWave: StandingWaveState;
   /** Simulation time in periods (tau = t/T); phase survives frequency changes. */
@@ -65,6 +73,7 @@ export interface WaveLabState {
     key: K,
     value: PlanarInterfaceState[K],
   ) => void;
+  setSlabParam: <K extends keyof LayeredSlabState>(key: K, value: LayeredSlabState[K]) => void;
   setTau: (tau: number) => void;
   setPlaying: (playing: boolean) => void;
   setSpeed: (speed: number) => void;
@@ -90,6 +99,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   planeWave: defaultPlaneWaveState,
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
+  layeredSlab: defaultLayeredSlabState,
   velocity: defaultVelocityState,
   standingWave: defaultStandingWaveState,
   tau: 0,
@@ -112,6 +122,7 @@ export const useWaveLabStore = create<WaveLabState>((set) => ({
   setSpreadingParam: (key, value) => set((s) => ({ spreading: { ...s.spreading, [key]: value } })),
   setInterfaceParam: (key, value) =>
     set((s) => ({ planarInterface: { ...s.planarInterface, [key]: value } })),
+  setSlabParam: (key, value) => set((s) => ({ layeredSlab: { ...s.layeredSlab, [key]: value } })),
   setTau: (tau) => set({ tau }),
   setPlaying: (playing) => set({ playing }),
   setSpeed: (speed) => set({ speed }),

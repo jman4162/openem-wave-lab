@@ -23,3 +23,7 @@ export * from './velocity/model';
 export * from './standing-wave/state';
 export * from './standing-wave/fields';
 export * from './standing-wave/model';
+export * from './slab/state';
+export * from './slab/derive';
+export * from './slab/fields';
+export * from './slab/model';

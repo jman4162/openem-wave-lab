@@ -1,9 +1,11 @@
 import {
+  defaultLayeredSlabState,
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
   defaultStandingWaveState,
   defaultVelocityState,
+  layeredSlabModel,
   planarInterfaceModel,
   standingWaveModel,
   planeWaveModel,
@@ -21,7 +23,8 @@ import type { SceneId } from '../state/store';
 export interface ModuleManifest {
   id: SceneId;
   /** Store slice holding this module's params. */
-  sliceKey: 'planeWave' | 'spreading' | 'planarInterface' | 'velocity' | 'standingWave';
+  sliceKey:
+    'planeWave' | 'spreading' | 'planarInterface' | 'layeredSlab' | 'velocity' | 'standingWave';
   parameters: ParameterDefinition[];
   defaults: Record<string, unknown>;
   /** URL short key -> numeric param key in the slice. Distinct across modules. */
@@ -113,6 +116,23 @@ export const MODULE_MANIFESTS: ModuleManifest[] = [
       { short: 'px', storeKey: 'probeX', min: -2, max: 2 },
       { short: 'pz', storeKey: 'probeZ', min: -2.5, max: 1.5 },
     ],
+  },
+  {
+    id: 'layered-slab',
+    sliceKey: 'layeredSlab',
+    parameters: layeredSlabModel.parameters,
+    defaults: defaultLayeredSlabState as unknown as Record<string, unknown>,
+    urlParams: {
+      lsf: 'frequencyHz',
+      lth: 'thetaDeg',
+      le0: 'E0',
+      le1: 'eps1R',
+      le2: 'eps2R',
+      le3: 'eps3R',
+      ld: 'thicknessLambda1',
+    },
+    sliceEnums: [{ short: 'lpol', key: 'polarization', values: ['TE', 'TM'] }],
+    extraNums: [],
   },
   {
     id: 'velocities',

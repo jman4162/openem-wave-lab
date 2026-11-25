@@ -1,4 +1,5 @@
 import type { SceneId } from '../state/store';
+import { layeredSlabModule } from './layered-slab';
 import { planarInterfaceModule } from './planar-interface';
 import { planeWaveModule } from './plane-wave';
 import { spreadingModule } from './spreading';
@@ -10,6 +11,7 @@ export const MODULES: WaveModule[] = [
   planeWaveModule,
   spreadingModule,
   planarInterfaceModule,
+  layeredSlabModule,
   velocityModule,
   standingWaveModule,
 ];

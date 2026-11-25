@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 OpenEM Wave Lab: an open-source, browser-based interactive learning platform for
 electromagnetic-wave physics, desktop and mobile. Implemented modules: plane
 wave (3D vector scene), wave spreading (heatmap comparison + 3D surface),
-planar interface (Fresnel/Brewster/TIR/PEC, 2D + 3D views), velocities
+planar interface (Fresnel/Brewster/TIR/PEC, 2D + 3D views), layered slab
+(frustrated TIR, Fabry–Pérot, AR coatings), velocities
 (phase/group/energy with waveguide dispersion), and standing waves. Later
 phases add negative refraction and whispering-gallery modes.
 
@@ -52,7 +53,7 @@ triggers in `docs/architecture.md`):
 - `packages/physics-core` — pure TypeScript physics: complex/vec3/Bessel math,
   constants, the `PhysicsModel` contract (`src/model.ts`), shared sample
   layout (`src/sample.ts`), and the models (`src/plane-wave/`,
-  `src/spreading/`, `src/interface/`). No three.js/React/DOM dependency, ever.
+  `src/spreading/`, `src/interface/`, `src/slab/`). No three.js/React/DOM dependency, ever.
 - `apps/web` — Vite + React 19 + three.js app. A module registry
   (`src/modules/registry.ts`) maps each experiment to a scene factory plus
   Controls/Sidebar/Equations panels; `src/modules/manifest.ts` is the

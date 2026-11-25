@@ -1,9 +1,11 @@
 import {
+  defaultLayeredSlabState,
   defaultPlanarInterfaceState,
   defaultPlaneWaveState,
   defaultSpreadingState,
   defaultStandingWaveState,
   defaultVelocityState,
+  type LayeredSlabState,
   type PlanarInterfaceState,
   type StandingWaveState,
   type PlaneWaveState,
@@ -26,6 +28,7 @@ export interface SceneSnapshot {
   planeWave: PlaneWaveState;
   spreading: SpreadingState;
   planarInterface: PlanarInterfaceState;
+  layeredSlab: LayeredSlabState;
   velocity: VelocityState;
   standingWave: StandingWaveState;
   tau: number;
@@ -50,6 +53,7 @@ export const defaultSceneSnapshot: SceneSnapshot = {
   planeWave: defaultPlaneWaveState,
   spreading: defaultSpreadingState,
   planarInterface: defaultPlanarInterfaceState,
+  layeredSlab: defaultLayeredSlabState,
   velocity: defaultVelocityState,
   standingWave: defaultStandingWaveState,
   tau: 0,
@@ -132,6 +136,7 @@ export function decodeScene(search: string | URLSearchParams): SceneSnapshot {
     planeWave: { ...defaultPlaneWaveState },
     spreading: { ...defaultSpreadingState },
     planarInterface: { ...defaultPlanarInterfaceState },
+    layeredSlab: { ...defaultLayeredSlabState },
     velocity: { ...defaultVelocityState },
     standingWave: { ...defaultStandingWaveState },
   };

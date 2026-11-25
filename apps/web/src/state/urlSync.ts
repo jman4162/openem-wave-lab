@@ -6,6 +6,7 @@ export const snapshotOf = (s: WaveLabState): SceneSnapshot => ({
   planeWave: s.planeWave,
   spreading: s.spreading,
   planarInterface: s.planarInterface,
+  layeredSlab: s.layeredSlab,
   velocity: s.velocity,
   standingWave: s.standingWave,
   tau: s.tau,

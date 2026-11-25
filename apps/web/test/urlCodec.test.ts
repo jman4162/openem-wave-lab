@@ -121,6 +121,30 @@ describe('URL codec', () => {
     expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
   });
 
+  it('encode then decode is the identity (layered slab, incl. polarization)', () => {
+    const snapshot: SceneSnapshot = {
+      ...defaultSceneSnapshot,
+      scene: 'layered-slab',
+      layeredSlab: {
+        frequencyHz: 2e9,
+        thetaDeg: 35,
+        polarization: 'TM',
+        E0: 1.5,
+        eps1R: 2.25,
+        eps2R: 6,
+        eps3R: 1,
+        thicknessLambda1: 0.875,
+      },
+    };
+    expect(decodeScene(encodeScene(snapshot))).toEqual(snapshot);
+  });
+
+  it('layered-slab thickness is clamped to its parameter bounds', () => {
+    const decoded = decodeScene('scene=layered-slab&ld=9&lpol=XX');
+    expect(decoded.layeredSlab.thicknessLambda1).toBe(2);
+    expect(decoded.layeredSlab.polarization).toBe('TE');
+  });
+
   it('PEC flag and polarization survive the round trip; junk enum ignored', () => {
     const snapshot: SceneSnapshot = {
       ...defaultSceneSnapshot,

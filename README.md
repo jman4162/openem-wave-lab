@@ -14,7 +14,7 @@ field vectors, phase fronts, and power flow update together in real time.
 ## Status
 
 Early development. The [live demo](https://jman4162.github.io/openem-wave-lab/)
-works on desktop and mobile and has five modules, all with time scrubbing,
+works on desktop and mobile and has six modules, all with time scrubbing,
 movable probes, live equation panels with runtime validation, and shareable
 experiment URLs:
 
@@ -27,6 +27,11 @@ experiment URLs:
   reflection with evanescent fields, lossy media, and PEC mirrors; Poynting
   arrows computed from E×H; 3D surface view where the seam across the
   boundary is the tangential continuity condition, visible.
+- **Layered slab** — a plane wave crossing a dielectric slab between two
+  media: frustrated total internal reflection (power tunneling across an
+  evanescent gap), Fabry–Pérot resonances, quarter-wave antireflection
+  coatings and half-wave layers, with R and T vs thickness and ⟨S⟩ arrows
+  from E×H showing the tunneled power.
 - **Velocities** — phase vs group vs energy velocity in a waveguide-dispersion
   medium: a marker riding a carrier crest races one riding the envelope peak,
   plus a spreading Gaussian pulse and the ω(k) diagram with chord and tangent.
